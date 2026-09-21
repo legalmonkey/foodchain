@@ -1,0 +1,23 @@
+{
+  "name": "foodchain-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for FoodChain decentralized complaint and dispute resolution",
+  "main": "index.js",
+  "scripts": {
+    "compile": "node ./node_modules/hardhat/internal/cli/cli.js compile",
+    "test": "node ./node_modules/hardhat/internal/cli/cli.js test",
+    "deploy:local": "node ./node_modules/hardhat/internal/cli/cli.js run scripts/deploy.js --network localhost",
+    "deploy:amoy": "node ./node_modules/hardhat/internal/cli/cli.js run scripts/deploy.js --network amoy"
+  },
+  "keywords": ["blockchain", "solidity", "hardhat", "foodchain", "ethereum", "polygon"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.5"
+  }
+}
