@@ -60,12 +60,12 @@ export const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="neo-card p-6 bg-brand-yellow text-brand-dark flex flex-wrap justify-between items-center gap-4">
+      <div className="neo-card p-6 bg-brand-dark text-white flex flex-wrap justify-between items-center gap-4">
         <div>
-          <span className="neo-badge bg-black text-white mb-2">⚡ God Mode Dashboard</span>
-          <h1 className="text-3xl font-black uppercase">System Administration</h1>
-          <p className="text-xs font-bold text-gray-800 mt-1">
-            Manual controls for viva evaluations, dispute resolution emergency bypass, and database seeding.
+          <span className="neo-badge bg-brand-red text-white mb-2">Platform Operations Console</span>
+          <h1 className="text-3xl font-black uppercase tracking-tight">System Administration</h1>
+          <p className="text-xs font-semibold text-gray-300 mt-1">
+            Manual controls for evaluations, dispute resolution emergency bypass, and state overrides.
           </p>
         </div>
 

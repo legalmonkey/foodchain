@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBadge } from './StatusBadge';
-import { Clock, MapPin, ChefHat, Bike, AlertCircle } from 'lucide-react';
+import { Clock, MapPin, ChefHat, Bike, AlertCircle, Lock } from 'lucide-react';
 import { BLOCK_EXPLORER_URL } from '../config';
 
 export const OrderCard = ({
@@ -33,9 +33,10 @@ export const OrderCard = ({
             href={`${BLOCK_EXPLORER_URL}/search?q=${order.onChainOrderKey}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-bold text-blue-700 underline bg-blue-50 border border-black px-2 py-1"
+            className="text-xs font-bold text-blue-700 underline bg-blue-50 border border-black px-2 py-1 inline-flex items-center gap-1"
           >
-            ⛓️ On-Chain Anchor
+            <Lock className="w-3.5 h-3.5 text-brand-dark" />
+            <span>On-Chain Anchor</span>
           </a>
         )}
       </div>

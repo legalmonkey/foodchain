@@ -4,24 +4,27 @@
 
 @layer components {
   .neo-btn {
-    @apply font-bold py-2 px-4 border-3 border-black shadow-neo transition-all duration-150 active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:pointer-events-none;
+    @apply font-bold py-2.5 px-4 border-2 border-brand-dark shadow-neo transition-all duration-150 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-50 disabled:pointer-events-none rounded-md inline-flex items-center justify-center gap-2;
   }
   .neo-btn-primary {
-    @apply neo-btn bg-brand-red text-white hover:bg-red-600;
+    @apply neo-btn bg-brand-red text-white hover:bg-brand-redHover border-brand-dark;
   }
   .neo-btn-secondary {
-    @apply neo-btn bg-brand-yellow text-brand-dark hover:bg-yellow-400;
+    @apply neo-btn bg-white text-brand-dark hover:bg-brand-gray border-brand-dark;
   }
   .neo-btn-dark {
-    @apply neo-btn bg-brand-dark text-white hover:bg-black;
+    @apply neo-btn bg-brand-dark text-white hover:bg-brand-black border-brand-dark;
+  }
+  .neo-btn-outline {
+    @apply neo-btn bg-transparent text-brand-red border-brand-red hover:bg-brand-redLight shadow-none hover:shadow-neo;
   }
   .neo-card {
-    @apply bg-white border-3 border-black shadow-neo rounded-none;
+    @apply bg-white border-2 border-brand-dark shadow-neo rounded-lg;
   }
   .neo-badge {
-    @apply font-bold text-xs px-2.5 py-1 border-2 border-black uppercase tracking-wider inline-block;
+    @apply font-black text-[11px] px-2.5 py-1 border border-brand-dark uppercase tracking-wider inline-flex items-center gap-1 rounded;
   }
   .neo-input {
-    @apply bg-white border-3 border-black px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-yellow focus:shadow-neo;
+    @apply bg-white border-2 border-brand-dark px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-red rounded-md;
   }
 }

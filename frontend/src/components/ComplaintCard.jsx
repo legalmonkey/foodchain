@@ -43,7 +43,10 @@ export const ComplaintCard = ({
       {evidenceUrl && (
         <div className="border-2 border-black p-2 bg-brand-muted space-y-2">
           <div className="flex justify-between items-center text-xs font-bold">
-            <span>📷 Pinned IPFS Evidence:</span>
+            <span className="flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5 text-brand-red" />
+              <span>Pinned IPFS Evidence:</span>
+            </span>
             <a
               href={evidenceUrl}
               target="_blank"
@@ -99,12 +102,20 @@ export const ComplaintCard = ({
 
       {/* Resolution status info */}
       {complaint.status === 'Resolved' && (
-        <div className={`p-2.5 border-2 border-black text-xs font-bold ${
+        <div className={`p-2.5 border-2 border-black text-xs font-bold flex items-center gap-2 ${
           complaint.verdictUpheld ? 'bg-red-100 text-red-900' : 'bg-green-100 text-green-900'
         }`}>
-          {complaint.verdictUpheld
-            ? '⚠️ Verdict: Complaint UPHELD against respondent by Jury Consensus (-10 Rep)'
-            : '✅ Verdict: Complaint DISMISSED in favor of respondent (+2 Rep)'}
+          {complaint.verdictUpheld ? (
+            <>
+              <AlertTriangle className="w-4 h-4 text-brand-red shrink-0" />
+              <span>Verdict: Complaint UPHELD against respondent by Jury Consensus (-10 Rep)</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0" />
+              <span>Verdict: Complaint DISMISSED in favor of respondent (+2 Rep)</span>
+            </>
+          )}
         </div>
       )}
     </div>

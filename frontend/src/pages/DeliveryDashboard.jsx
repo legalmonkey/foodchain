@@ -86,7 +86,7 @@ export const DeliveryDashboard = () => {
 
         {activeDeliveries.length === 0 ? (
           <div className="neo-card p-8 text-center space-y-2 bg-white">
-            <span className="text-4xl">🛵</span>
+            <Bike className="w-10 h-10 text-gray-400 mx-auto" />
             <h3 className="font-black text-lg">No Deliveries in Transit</h3>
             <p className="text-xs text-gray-600 font-bold">
               When orders reach "PREPARING", they will appear here ready for pickup!

@@ -162,8 +162,9 @@ export const JurorDashboard = () => {
               Your Juror Stake
             </span>
             <span className="text-xl font-black">{jurorStake} POL</span>
-            <span className="text-[10px] block font-bold text-gray-600">
-              Status: {isJuror ? '🟢 Active in Pool' : '⚪ Not Staked'}
+            <span className="text-[10px] flex items-center gap-1.5 font-bold text-gray-600 mt-0.5">
+              <span className={`w-2 h-2 rounded-full ${isJuror ? 'bg-green-600' : 'bg-gray-400'}`} />
+              Status: {isJuror ? 'Active in Pool' : 'Not Staked'}
             </span>
           </div>
 
@@ -201,7 +202,7 @@ export const JurorDashboard = () => {
 
         {assignedCases.length === 0 ? (
           <div className="neo-card p-8 text-center space-y-3 bg-white">
-            <span className="text-4xl">⚖️</span>
+            <Scale className="w-10 h-10 text-gray-400 mx-auto" />
             <h3 className="font-black text-lg">No Active Assigned Disputes</h3>
             <p className="text-xs text-gray-600 font-bold max-w-md mx-auto">
               When restaurants or delivery partners contest a customer complaint, the contract selects 5 jurors from the pool to arbitrate with real IPFS evidence!
@@ -268,10 +269,10 @@ export const JurorDashboard = () => {
                 <div className="border-t-2 border-black pt-3 flex justify-between items-center">
                   <span className="text-xs font-bold">
                     {c.myVote === 1
-                      ? '🗳️ Voted: Uphold'
+                      ? 'Voted: Uphold'
                       : c.myVote === 2
-                      ? '🗳️ Voted: Reject'
-                      : '⏳ You have not voted yet'}
+                      ? 'Voted: Reject'
+                      : 'You have not voted yet'}
                   </span>
 
                   {!c.finalized && c.myVote === 0 && (

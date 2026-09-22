@@ -7,7 +7,7 @@ import { useContract } from '../hooks/useContract';
 import { useSocket } from '../hooks/useSocket';
 import { OrderCard } from '../components/OrderCard';
 import { ComplaintCard } from '../components/ComplaintCard';
-import { Award, Plus, ChefHat, AlertOctagon, CheckCircle2, X } from 'lucide-react';
+import { Award, Plus, ChefHat, AlertOctagon, CheckCircle2, X, Utensils, Scale, ClipboardList } from 'lucide-react';
 
 export const RestaurantDashboard = () => {
   const { user } = useAuth();
@@ -180,22 +180,26 @@ export const RestaurantDashboard = () => {
       {/* Tabs */}
       <div className="flex border-b-4 border-black gap-2">
         {[
-          { id: 'orders', label: `🍳 Live Kitchen Queue (${orders.filter((o) => o.status !== 'DELIVERED' && o.status !== 'CLOSED').length})` },
-          { id: 'complaints', label: `⚖️ Complaints Inbox (${complaints.length})` },
-          { id: 'menu', label: `📋 Menu Management (${menuItems.length})` },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`font-black text-xs sm:text-sm py-3 px-4 sm:px-6 border-t-3 border-x-3 border-black transition-all ${
-              activeTab === tab.id
-                ? 'bg-brand-yellow -mb-1 pb-4 shadow-neo-sm text-brand-dark'
-                : 'bg-white hover:bg-gray-100 text-gray-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+          { id: 'orders', label: `Live Kitchen Queue (${orders.filter((o) => o.status !== 'DELIVERED' && o.status !== 'CLOSED').length})`, icon: Utensils },
+          { id: 'complaints', label: `Complaints Inbox (${complaints.length})`, icon: Scale },
+          { id: 'menu', label: `Menu Management (${menuItems.length})`, icon: ClipboardList },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`font-black text-xs sm:text-sm py-3 px-4 sm:px-6 border-t-3 border-x-3 border-black transition-all flex items-center gap-2 ${
+                activeTab === tab.id
+                  ? 'bg-brand-yellow -mb-1 pb-4 shadow-neo-sm text-brand-dark'
+                  : 'bg-white hover:bg-gray-100 text-gray-700'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* TAB 1: KITCHEN ORDERS */}
@@ -208,7 +212,7 @@ export const RestaurantDashboard = () => {
 
           {orders.length === 0 ? (
             <div className="neo-card p-8 text-center space-y-2 bg-white">
-              <span className="text-4xl">🧑‍🍳</span>
+              <ChefHat className="w-10 h-10 text-gray-400 mx-auto" />
               <h3 className="font-black text-lg">No Orders in Queue</h3>
               <p className="text-xs text-gray-600 font-bold">
                 Orders placed by customers will arrive here automatically via Socket.io!
@@ -239,8 +243,8 @@ export const RestaurantDashboard = () => {
 
           {complaints.length === 0 ? (
             <div className="neo-card p-8 text-center space-y-2 bg-white">
-              <span className="text-4xl">✨</span>
-              <h3 className="font-black text-lg">Clean Record!</h3>
+              <CheckCircle2 className="w-10 h-10 text-green-600 mx-auto" />
+              <h3 className="font-black text-lg">Clean Record</h3>
               <p className="text-xs text-gray-600 font-bold">
                 No active complaints filed against this kitchen.
               </p>

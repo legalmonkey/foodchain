@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useWeb3 } from '../context/Web3Context';
-import { Shield, Wallet, Lock, User, Phone, CheckCircle, AlertCircle } from 'lucide-react';
+import { Shield, Wallet, Lock, User, Phone, CheckCircle, AlertCircle, UtensilsCrossed } from 'lucide-react';
 
 export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
   const { login, register } = useAuth();
@@ -74,11 +74,11 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
     <div className="max-w-xl mx-auto py-8">
       <div className="neo-card p-6 sm:p-8 bg-white space-y-6">
         {/* Header */}
-        <div className="border-b-4 border-black pb-4 text-center">
-          <div className="inline-block bg-brand-yellow border-2 border-black p-2 mb-2 shadow-neo-sm">
-            <span className="text-3xl">🍔</span>
+        <div className="border-b-2 border-brand-dark pb-4 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-brand-red border-2 border-brand-dark rounded-xl p-2 mb-2 shadow-neo-sm text-white">
+            <UtensilsCrossed className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black uppercase tracking-tight">
+          <h2 className="text-2xl font-black uppercase tracking-tight text-brand-dark">
             {isRegister ? 'Create FoodChain Account' : 'Authenticate with Platform'}
           </h2>
           <p className="text-xs font-bold text-gray-600 mt-1">
@@ -87,9 +87,9 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
         </div>
 
         {/* Demo Quick-fill Buttons */}
-        <div className="bg-brand-muted border-2 border-black p-3 space-y-2">
+        <div className="bg-brand-grayLight border-2 border-brand-dark p-3 rounded-lg space-y-2">
           <span className="text-[10px] font-black uppercase tracking-wider text-gray-700 block">
-            ⚡ Viva Demo Quick-Fill Presets:
+            Role Quick-Fill Demo Presets:
           </span>
           <div className="flex flex-wrap gap-1.5">
             {Object.keys(DEMO_ACCOUNTS).map((k) => (

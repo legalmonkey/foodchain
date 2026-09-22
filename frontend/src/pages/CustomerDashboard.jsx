@@ -19,7 +19,9 @@ import {
   X,
   Send,
   Loader2,
+  Scale
 } from 'lucide-react';
+import { KAGGLE_RESTAURANTS } from '../data/zomatoRestaurants';
 
 export const CustomerDashboard = () => {
   const { user } = useAuth();
@@ -66,9 +68,14 @@ export const CustomerDashboard = () => {
   const fetchRestaurants = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/restaurants`);
-      setRestaurants(res.data);
+      if (res.data && res.data.length > 0) {
+        setRestaurants(res.data);
+      } else {
+        setRestaurants(KAGGLE_RESTAURANTS);
+      }
     } catch (err) {
-      console.error('Error fetching restaurants:', err);
+      console.warn('Error fetching restaurants, using Kaggle fallback:', err.message);
+      setRestaurants(KAGGLE_RESTAURANTS);
     }
   };
 
@@ -92,6 +99,10 @@ export const CustomerDashboard = () => {
 
   const openRestaurantMenu = async (restaurant) => {
     setSelectedRestaurant(restaurant);
+    if (restaurant.menu && restaurant.menu.length > 0) {
+      setMenuItems(restaurant.menu);
+      return;
+    }
     try {
       const res = await axios.get(`${API_URL}/api/restaurants/${restaurant._id}`);
       setMenuItems(res.data.menuItems || []);
@@ -235,19 +246,19 @@ export const CustomerDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Tabs */}
-      <div className="flex border-b-4 border-black gap-2">
+      <div className="flex border-b-2 border-brand-dark gap-2">
         {[
-          { id: 'browse', label: '🍔 Restaurants & Menus' },
-          { id: 'orders', label: `📦 Live Orders (${orders.length})` },
-          { id: 'complaints', label: `⚖️ My Grievances (${complaints.length})` },
+          { id: 'browse', label: 'Restaurants & Menus' },
+          { id: 'orders', label: `Live Orders (${orders.length})` },
+          { id: 'complaints', label: `My Grievances (${complaints.length})` },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`font-black text-xs sm:text-sm py-3 px-4 sm:px-6 border-t-3 border-x-3 border-black transition-all ${
+            className={`font-black text-xs sm:text-sm py-3 px-4 sm:px-6 border-t-2 border-x-2 border-brand-dark rounded-t-lg transition-all ${
               activeTab === tab.id
-                ? 'bg-brand-yellow -mb-1 pb-4 shadow-neo-sm'
-                : 'bg-white hover:bg-gray-100 text-gray-700'
+                ? 'bg-brand-red text-white -mb-0.5 shadow-neo-sm'
+                : 'bg-white hover:bg-brand-gray text-gray-700'
             }`}
           >
             {tab.label}
@@ -320,12 +331,12 @@ export const CustomerDashboard = () => {
 
           {orders.length === 0 ? (
             <div className="neo-card p-8 text-center space-y-3 bg-white">
-              <span className="text-4xl">🛒</span>
-              <h3 className="font-black text-lg">No Orders Placed Yet</h3>
+              <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto" />
+              <h3 className="font-black text-lg text-brand-dark">No Orders Placed Yet</h3>
               <p className="text-xs text-gray-600 font-bold">
                 Browse our Kaggle Zomato restaurants and place your first food order!
               </p>
-              <button onClick={() => setActiveTab('browse')} className="neo-btn-secondary text-xs">
+              <button onClick={() => setActiveTab('browse')} className="neo-btn-primary text-xs py-2 px-4">
                 Browse Restaurants
               </button>
             </div>
@@ -354,8 +365,8 @@ export const CustomerDashboard = () => {
 
           {complaints.length === 0 ? (
             <div className="neo-card p-8 text-center space-y-2 bg-white">
-              <span className="text-4xl">⚖️</span>
-              <h3 className="font-black text-lg">No Complaints Filed</h3>
+              <Scale className="w-10 h-10 text-gray-300 mx-auto" />
+              <h3 className="font-black text-lg text-brand-dark">No Complaints Filed</h3>
               <p className="text-xs text-gray-600 font-bold">
                 Delivered orders can be contested with IPFS-pinned evidence if items are wrong or delayed.
               </p>
