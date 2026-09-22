@@ -16,13 +16,67 @@ import {
   Sparkles,
   Smartphone,
   Check,
-  Lock
+  Lock,
+  Camera,
+  XCircle,
+  AlertTriangle,
+  Zap,
+  HelpCircle,
+  Flame,
+  ThumbsUp,
+  FileText
 } from 'lucide-react';
 import { KAGGLE_RESTAURANTS } from '../data/zomatoRestaurants';
 
 export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNavigate, onGetStarted }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('Bangalore, Central');
+  const [activeCaseTab, setActiveCaseTab] = useState(0);
+
+  const sampleGrievanceCases = [
+    {
+      id: 'CASE-104',
+      title: 'Packaging Torn & Gravy Spilled',
+      restaurant: 'Empire Restaurant • Indiranagar',
+      complaintType: 'Damaged Packaging & Spillage',
+      claimAmount: '₹340',
+      refundStatus: '100% Refunded to Customer',
+      resolutionTime: '84 seconds',
+      evidenceType: 'IPFS Photo (CID: QmX8...3b9)',
+      evidenceUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop',
+      juryConsensus: '5 / 5 Jurors Voted Uphold',
+      jurorReward: '+0.01 POL to each juror',
+      customerStory: 'Delivered in a torn paper bag with curry leaking everywhere. Took 1 photo on my phone; 5 community jurors voted uphold in under 2 minutes and ₹340 was returned to my wallet automatically.',
+    },
+    {
+      id: 'CASE-098',
+      title: 'Wrong Burger & Missing Truffle Fries',
+      restaurant: 'Truffles • Koramangala 5th Block',
+      complaintType: 'Wrong / Incomplete Order',
+      claimAmount: '₹220',
+      refundStatus: 'Partial Refund Processed',
+      resolutionTime: '112 seconds',
+      evidenceType: 'IPFS Photo & Unboxing Receipt',
+      evidenceUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop',
+      juryConsensus: '4 / 5 Jurors Voted Uphold',
+      jurorReward: '+0.01 POL to majority jurors',
+      customerStory: 'Ordered All-American Cheese Burger + Fries, received a Veg Burger with no fries. Submitted photo proof to IPFS. Community jury confirmed discrepancy and escrow released the refund.',
+    },
+    {
+      id: 'CASE-089',
+      title: 'Food Arrived Completely Ice Cold (1h 15m delay)',
+      restaurant: 'Meghana Foods • Residency Road',
+      complaintType: 'Food Temperature & Extreme Delay',
+      claimAmount: '₹360',
+      refundStatus: 'Fault Accepted by Restaurant',
+      resolutionTime: '45 seconds',
+      evidenceType: 'Delivery Timestamp Proof',
+      evidenceUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop',
+      juryConsensus: 'Direct Auto-Resolution (Fault Accepted)',
+      jurorReward: 'No Jury Needed (Reputation -5)',
+      customerStory: 'Rider took over an hour and biryani was completely chilled. Kitchen saw the immutable timestamp, immediately accepted fault to avoid a jury penalty, and escrow refunded my order.',
+    }
+  ];
 
   const popularCuisines = [
     { name: 'Biryani', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=300&auto=format&fit=crop' },
@@ -120,6 +174,210 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
                 {tag}
               </button>
             ))}
+          </div>
+
+          {/* Micro 3-Pill Trust Guarantee Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-100 max-w-2xl mx-auto">
+            <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-700 bg-brand-grayLight py-2 px-3 rounded-lg border border-gray-200">
+              <Lock className="w-4 h-4 text-brand-red shrink-0" />
+              <span>Smart Contract Escrow</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-700 bg-brand-grayLight py-2 px-3 rounded-lg border border-gray-200">
+              <Camera className="w-4 h-4 text-brand-red shrink-0" />
+              <span>60s IPFS Photo Proof</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-700 bg-brand-grayLight py-2 px-3 rounded-lg border border-gray-200">
+              <Scale className="w-4 h-4 text-brand-red shrink-0" />
+              <span>5-Juror Community Verdict</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* THE CORE USP: GRIEVANCE REDRESSAL SHOWCASE (HOOK SECTION) */}
+      <section className="bg-white border-2 border-brand-dark rounded-2xl p-6 sm:p-10 shadow-neo space-y-8">
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 bg-brand-redLight border border-brand-red text-brand-red px-3 py-1 rounded-full text-xs font-black">
+            <ShieldCheck className="w-4 h-4" />
+            <span>OUR CORE PROMISE & USP</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-black uppercase text-brand-dark tracking-tight">
+            Never Get Cheated by a Food App Again
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed">
+            Every diner has experienced cold, spilled, or incorrect food, only to be rejected by an automated chatbot.
+            FoodChain was built to give the power back to customers through decentralized escrow and peer juries.
+          </p>
+        </div>
+
+        {/* Side-by-Side: The Old Way vs The FoodChain Way */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Traditional Apps Card */}
+          <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6 space-y-4 text-gray-700">
+            <div className="flex items-center justify-between border-b pb-3">
+              <span className="font-black text-xs uppercase tracking-wider text-gray-500">Traditional Food Apps</span>
+              <span className="text-xs font-bold px-2 py-0.5 bg-red-100 text-red-800 rounded border border-red-200">Unilateral & Opaque</span>
+            </div>
+
+            <div className="space-y-3 text-xs font-medium">
+              <div className="flex items-start gap-2.5">
+                <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span><strong>Automated Bot Rejections:</strong> Chatbots quote vague "internal policies" to deny valid refund requests.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span><strong>Money Gone Instantly:</strong> Your card is charged upfront and held by the platform regardless of food condition.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span><strong>Deleted Evidence:</strong> Screenshots sent to support vanish into closed tickets without public logs.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span><strong>Outcome:</strong> You stay hungry, lose ₹400+, and spend 40 minutes arguing with a script.</span>
+              </div>
+            </div>
+          </div>
+
+          {/* FoodChain Card */}
+          <div className="bg-brand-redLight/40 border-2 border-brand-dark rounded-xl p-6 shadow-neo space-y-4 text-brand-dark">
+            <div className="flex items-center justify-between border-b-2 border-brand-dark pb-3">
+              <span className="font-black text-xs uppercase tracking-wider text-brand-red flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-brand-red" />
+                <span>FoodChain Smart Redressal</span>
+              </span>
+              <span className="text-xs font-black px-2 py-0.5 bg-brand-red text-white rounded border border-black shadow-neo-sm">100% Guaranteed</span>
+            </div>
+
+            <div className="space-y-3 text-xs font-medium">
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
+                <span><strong>Smart Contract Escrow:</strong> Payment is held safely on Polygon Amoy until your meal is delivered correctly.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
+                <span><strong>Immutable IPFS Photo Proof:</strong> Snap a 5-second photo; proof is permanently pinned to IPFS and cannot be erased.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
+                <span><strong>5-Juror Community Arbitration:</strong> Staked peers review photo proof. Fair voters are rewarded; dishonest voters slashed.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
+                <span><strong>Outcome:</strong> When the jury upholds your claim, your refund is released directly to your wallet in minutes!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Interactive Live Case Inspector: Hooking the User with Real Grievance Scenarios */}
+        <div className="bg-white border-2 border-brand-dark rounded-xl p-6 shadow-neo space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-brand-dark pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+                <h3 className="font-black text-base uppercase text-brand-dark">
+                  Live Grievance Redressal in Action
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500 font-medium">
+                Select a real dispute case to see how the decentralized jury examined evidence and issued refunds
+              </p>
+            </div>
+            <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+              {sampleGrievanceCases.map((c, idx) => (
+                <button
+                  key={c.id}
+                  onClick={() => setActiveCaseTab(idx)}
+                  className={`text-xs font-black px-3 py-1.5 border-2 border-brand-dark rounded transition-all whitespace-nowrap ${
+                    activeCaseTab === idx
+                      ? 'bg-brand-red text-white shadow-neo-sm'
+                      : 'bg-brand-gray text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {c.id}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Active Case Details Card */}
+          {(() => {
+            const current = sampleGrievanceCases[activeCaseTab];
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                {/* Evidence Preview Image */}
+                <div className="md:col-span-4 relative rounded-lg overflow-hidden border-2 border-brand-dark h-48 bg-gray-100">
+                  <img
+                    src={current.evidenceUrl}
+                    alt={current.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 left-2 bg-brand-dark text-white text-[10px] font-black px-2 py-0.5 rounded flex items-center gap-1 border border-black">
+                    <Camera className="w-3 h-3 text-brand-red" />
+                    <span>IPFS Verified Photo</span>
+                  </div>
+                  <div className="absolute bottom-2 right-2 bg-white text-brand-dark text-[10px] font-black px-2 py-0.5 rounded border border-black shadow-neo-sm">
+                    Claim: {current.claimAmount}
+                  </div>
+                </div>
+
+                {/* Case Timeline & Verdict */}
+                <div className="md:col-span-8 space-y-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-black uppercase text-brand-red tracking-wider block">
+                        {current.complaintType}
+                      </span>
+                      <h4 className="font-black text-base text-brand-dark">{current.title}</h4>
+                      <span className="text-gray-500 font-medium">{current.restaurant}</span>
+                    </div>
+                    <span className="px-2.5 py-1 bg-green-100 text-green-900 border border-green-300 font-black rounded-full flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-700" />
+                      <span>{current.refundStatus}</span>
+                    </span>
+                  </div>
+
+                  <p className="text-xs bg-gray-50 border border-gray-300 p-3 rounded text-gray-700 italic font-medium leading-relaxed">
+                    "{current.customerStory}"
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-bold">
+                    <div className="p-2 bg-brand-grayLight border border-gray-200 rounded">
+                      <span className="text-gray-500 block text-[9px] uppercase">Resolution Time</span>
+                      <span className="font-black text-brand-dark">{current.resolutionTime}</span>
+                    </div>
+                    <div className="p-2 bg-brand-grayLight border border-gray-200 rounded">
+                      <span className="text-gray-500 block text-[9px] uppercase">Jury Vote Tally</span>
+                      <span className="font-black text-green-800">{current.juryConsensus}</span>
+                    </div>
+                    <div className="p-2 bg-brand-grayLight border border-gray-200 rounded">
+                      <span className="text-gray-500 block text-[9px] uppercase">Juror Incentive</span>
+                      <span className="font-black text-purple-800">{current.jurorReward}</span>
+                    </div>
+                    <div className="p-2 bg-brand-grayLight border border-gray-200 rounded">
+                      <span className="text-gray-500 block text-[9px] uppercase">Network</span>
+                      <span className="font-black text-brand-red">Polygon Amoy</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Direct Call to Action */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-200">
+            <span className="text-xs text-gray-600 font-bold text-center sm:text-left">
+              All dispute cases, evidence hashes, and juror votes are 100% public on Polygon Amoy.
+            </span>
+            <button
+              onClick={() => onNavigate && onNavigate('transparency')}
+              className="neo-btn-primary text-xs py-2 px-5 whitespace-nowrap uppercase tracking-wider"
+            >
+              <span>Open On-Chain Dispute Explorer</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </section>
