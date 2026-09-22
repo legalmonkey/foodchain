@@ -385,12 +385,10 @@ const MainContent = () => {
 
           <div className="pt-6 border-t border-gray-300 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-gray-500">
             <div>
-              &copy; 2026 FoodChain Protocol. Built with Solidity 0.8.24, Pinata IPFS, React, and Express.
+              &copy; 2026 FoodChain Protocol. All rights reserved.
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-[11px] font-bold">Polygon Amoy (Chain ID 80002)</span>
-              <span>•</span>
-              <span className="text-[11px] font-bold">Zero Emojis Clean Production UI</span>
+            <div className="text-[11px] font-bold">
+              Decentralized Food Delivery & Consumer Grievance Redressal
             </div>
           </div>
         </div>
