@@ -104,18 +104,18 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
         <div className="h-2.5 bg-brand-red w-full"></div>
 
         <div className="p-6 sm:p-12 lg:p-16 max-w-5xl mx-auto text-center space-y-8">
-          <div className="inline-flex items-center gap-2 bg-brand-red text-white border-2 border-brand-dark px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-neo-sm">
-            <ShieldCheck className="w-4 h-4 text-white" />
-            <span>OUR MOTTO</span>
+          <div className="inline-flex items-center gap-2 bg-brand-redLight border border-brand-red text-brand-red px-3.5 py-1.5 rounded-full text-xs font-black tracking-wide">
+            <ShieldCheck className="w-4 h-4 text-brand-red" />
+            <span>100% QUALITY GUARANTEED • SMART CONTRACT ESCROW & JURY REDRESSAL</span>
           </div>
 
           <div className="space-y-4">
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-brand-dark tracking-tight uppercase leading-[1.05]">
-              Never Get Cheated<br />
-              <span className="text-brand-red">By A Food App Again.</span>
+            <h1 className="text-4xl sm:text-6xl font-black text-brand-dark tracking-tight uppercase leading-none">
+              Delicious Food.<br />
+              <span className="text-brand-red">Zero Disappointment.</span>
             </h1>
             <p className="text-base sm:text-lg text-gray-700 font-medium max-w-2xl mx-auto leading-relaxed">
-              Order from Bangalore's most iconic kitchens with guaranteed protection. If your food arrives cold, damaged, or wrong, file evidence in 60 seconds. Our 5-juror community jury resolves grievances with automated on-chain refunds.
+              Order from Bangalore's most iconic restaurants. If food arrives cold, damaged, or wrong, file evidence in 60 seconds. Our decentralized community jury resolves grievances with automated refunds.
             </p>
           </div>
 
