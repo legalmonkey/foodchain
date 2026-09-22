@@ -24,7 +24,10 @@ import {
   HelpCircle,
   Flame,
   ThumbsUp,
-  FileText
+  FileText,
+  Bot,
+  User,
+  MessageSquare
 } from 'lucide-react';
 import { KAGGLE_RESTAURANTS } from '../data/zomatoRestaurants';
 
@@ -217,62 +220,158 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
           </p>
         </div>
 
-        {/* Side-by-Side: The Old Way vs The FoodChain Way */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Traditional Apps Card */}
-          <div className="bg-gray-50 border-2 border-gray-300 rounded-xl p-6 space-y-4 text-gray-700">
-            <div className="flex items-center justify-between border-b pb-3">
-              <span className="font-black text-xs uppercase tracking-wider text-gray-500">Traditional Food Apps</span>
-              <span className="text-xs font-bold px-2 py-0.5 bg-red-100 text-red-800 rounded border border-red-200">Unilateral & Opaque</span>
+        {/* The Reality Check: Visual Comparison (Chatbot Loop vs Smart Redressal) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+          {/* Mockup 1: Traditional Delivery App Support (The Painful Reality) */}
+          <div className="bg-white border-2 border-gray-300 rounded-2xl overflow-hidden flex flex-col justify-between shadow-sm">
+            {/* Window Header */}
+            <div className="bg-gray-100 px-5 py-3 border-b-2 border-gray-300 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                <span className="text-xs font-bold text-gray-700 ml-1.5 flex items-center gap-1.5">
+                  <Bot className="w-3.5 h-3.5 text-gray-500" />
+                  <span>Traditional Food App • Automated Support</span>
+                </span>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
+                Unilateral Policy
+              </span>
             </div>
 
-            <div className="space-y-3 text-xs font-medium">
-              <div className="flex items-start gap-2.5">
-                <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                <span><strong>Automated Bot Rejections:</strong> Chatbots quote vague "internal policies" to deny valid refund requests.</span>
+            {/* Chat Simulation Area */}
+            <div className="p-5 space-y-3.5 bg-gray-50/60 flex-1">
+              {/* Customer message */}
+              <div className="flex items-start gap-2.5 justify-end">
+                <div className="bg-brand-dark text-white text-xs font-medium p-3 rounded-2xl rounded-tr-none max-w-[85%] space-y-1 shadow-sm">
+                  <p>My Biryani arrived crushed and completely cold. The curry spilled all over the plastic bag.</p>
+                  <div className="text-[10px] text-gray-400 text-right font-mono">Delivered 2m ago</div>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center shrink-0 text-gray-700">
+                  <User className="w-4 h-4" />
+                </div>
               </div>
+
+              {/* Support Bot Automated Reply */}
               <div className="flex items-start gap-2.5">
-                <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                <span><strong>Money Gone Instantly:</strong> Your card is charged upfront and held by the platform regardless of food condition.</span>
+                <div className="w-7 h-7 rounded-full bg-red-100 border border-red-300 flex items-center justify-center shrink-0 text-brand-red">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div className="bg-white border border-gray-200 text-brand-dark text-xs p-3 rounded-2xl rounded-tl-none max-w-[85%] space-y-1 shadow-sm">
+                  <div className="text-[10px] font-black uppercase text-brand-red tracking-wider">Automated Support Bot</div>
+                  <p className="text-gray-700 leading-relaxed">
+                    We regret the inconvenience. However, as per our Restaurant Cancellation & Transit Policy, once an order is marked delivered by the driver, we cannot issue a refund.
+                  </p>
+                </div>
               </div>
+
+              {/* Customer Follow-up */}
+              <div className="flex items-start gap-2.5 justify-end">
+                <div className="bg-brand-dark text-white text-xs font-medium p-2.5 rounded-2xl rounded-tr-none max-w-[80%] shadow-sm">
+                  <p>Can a human agent review this photo?</p>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center shrink-0 text-gray-700">
+                  <User className="w-4 h-4" />
+                </div>
+              </div>
+
+              {/* Bot Closes Ticket */}
               <div className="flex items-start gap-2.5">
-                <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                <span><strong>Deleted Evidence:</strong> Screenshots sent to support vanish into closed tickets without public logs.</span>
+                <div className="w-7 h-7 rounded-full bg-red-100 border border-red-300 flex items-center justify-center shrink-0 text-brand-red">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div className="bg-white border border-gray-200 text-brand-dark text-xs p-2.5 rounded-2xl rounded-tl-none max-w-[85%] text-gray-500 italic">
+                  All human agents are currently busy. Ticket #9204 has been closed automatically.
+                </div>
               </div>
-              <div className="flex items-start gap-2.5">
-                <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                <span><strong>Outcome:</strong> You stay hungry, lose ₹400+, and spend 40 minutes arguing with a script.</span>
+            </div>
+
+            {/* Bottom Outcome Bar */}
+            <div className="p-3.5 bg-red-50 border-t-2 border-red-200 flex items-center justify-between text-xs font-bold">
+              <div className="flex items-center gap-2 text-red-700">
+                <XCircle className="w-4 h-4 shrink-0" />
+                <span>Result: ₹420 Lost • 45 Mins Wasted</span>
               </div>
+              <span className="text-[10px] font-black uppercase text-red-800 bg-red-100 px-2 py-0.5 rounded border border-red-300">
+                Zero Recourse
+              </span>
             </div>
           </div>
 
-          {/* FoodChain Card */}
-          <div className="bg-brand-redLight/40 border-2 border-brand-dark rounded-xl p-6 shadow-neo space-y-4 text-brand-dark">
-            <div className="flex items-center justify-between border-b-2 border-brand-dark pb-3">
-              <span className="font-black text-xs uppercase tracking-wider text-brand-red flex items-center gap-1.5">
+          {/* Mockup 2: FoodChain Smart Redressal Protocol (The Decentralized Fix) */}
+          <div className="bg-white border-2 border-brand-dark rounded-2xl overflow-hidden flex flex-col justify-between shadow-neo">
+            {/* Window Header */}
+            <div className="bg-brand-redLight px-5 py-3 border-b-2 border-brand-dark flex items-center justify-between">
+              <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-brand-red" />
-                <span>FoodChain Smart Redressal</span>
+                <span className="text-xs font-black uppercase text-brand-dark tracking-wide">FoodChain Smart Redressal Protocol</span>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-white bg-brand-red border border-brand-dark px-2.5 py-0.5 rounded shadow-neo-sm">
+                Smart Contract Escrow
               </span>
-              <span className="text-xs font-black px-2 py-0.5 bg-brand-red text-white rounded border border-black shadow-neo-sm">100% Guaranteed</span>
             </div>
 
-            <div className="space-y-3 text-xs font-medium">
-              <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
-                <span><strong>Smart Contract Escrow:</strong> Payment is held safely on Polygon Amoy until your meal is delivered correctly.</span>
+            {/* Visual Process Flow */}
+            <div className="p-6 space-y-5 bg-white flex-1 flex flex-col justify-center">
+              {/* Step 1 */}
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-red-50 border-2 border-brand-dark flex items-center justify-center shrink-0 text-brand-red shadow-neo-sm">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-black text-brand-dark flex items-center gap-2">
+                    <span>1. Automatic Escrow Lock</span>
+                    <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.2 rounded border">Polygon Amoy</span>
+                  </div>
+                  <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                    Payment is anchored in the smart contract escrow. Funds are never released to the restaurant until safe delivery is verified.
+                  </p>
+                </div>
               </div>
-              <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
-                <span><strong>Immutable IPFS Photo Proof:</strong> Snap a 5-second photo; proof is permanently pinned to IPFS and cannot be erased.</span>
+
+              {/* Step 2 */}
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-yellow-50 border-2 border-brand-dark flex items-center justify-center shrink-0 text-yellow-800 shadow-neo-sm">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-black text-brand-dark flex items-center gap-2">
+                    <span>2. 60-Second Immutable IPFS Evidence</span>
+                    <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.2 rounded border">Pinata IPFS</span>
+                  </div>
+                  <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                    Customer snaps a quick photo of the spilled box. Evidence is permanently pinned to IPFS and cannot be erased or hidden by anyone.
+                  </p>
+                </div>
               </div>
-              <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
-                <span><strong>5-Juror Community Arbitration:</strong> Staked peers review photo proof. Fair voters are rewarded; dishonest voters slashed.</span>
+
+              {/* Step 3 */}
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-green-50 border-2 border-brand-dark flex items-center justify-center shrink-0 text-green-700 shadow-neo-sm">
+                  <Scale className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-black text-brand-dark flex items-center gap-2">
+                    <span>3. 5-Juror Community Arbitration</span>
+                    <span className="text-[10px] font-black text-green-700 bg-green-100 px-1.5 py-0.2 rounded border border-green-300">5/5 Consensus</span>
+                  </div>
+                  <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                    5 staked community peers review proof on-chain. Fair jurors are rewarded, and consensus automatically triggers your refund.
+                  </p>
+                </div>
               </div>
-              <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
-                <span><strong>Outcome:</strong> When the jury upholds your claim, your refund is released directly to your wallet in minutes!</span>
+            </div>
+
+            {/* Bottom Outcome Bar */}
+            <div className="p-3.5 bg-green-50 border-t-2 border-brand-dark flex items-center justify-between text-xs font-bold">
+              <div className="flex items-center gap-2 text-green-800 font-black">
+                <CheckCircle2 className="w-4 h-4 text-green-700 shrink-0" />
+                <span>Result: ₹420 Auto-Refunded to Wallet in 84s</span>
               </div>
+              <span className="text-[10px] font-black uppercase text-green-900 bg-green-200 border border-green-400 px-2 py-0.5 rounded">
+                100% Protected
+              </span>
             </div>
           </div>
         </div>
