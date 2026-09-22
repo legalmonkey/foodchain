@@ -204,6 +204,19 @@ const MainContent = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-brand-dark font-['Public_Sans',sans-serif]">
+      {/* Top Motto Ribbon Banner */}
+      <div className="bg-brand-dark text-white text-[11px] sm:text-xs py-2 px-4 border-b-2 border-brand-dark font-bold tracking-wide flex items-center justify-center gap-2 text-center">
+        <span className="px-2 py-0.5 rounded bg-brand-red text-white text-[10px] uppercase font-black tracking-widest shadow-neo-sm shrink-0">
+          OUR MOTTO
+        </span>
+        <span className="font-extrabold text-white">
+          "Never get cheated by a food app again."
+        </span>
+        <span className="hidden md:inline text-gray-400 font-medium">
+          — 100% Smart Contract Escrow & Community Jury Redressal on Polygon Amoy
+        </span>
+      </div>
+
       {/* Top Zomato Red & White Navbar */}
       <Navbar currentTab={view} setCurrentTab={setView} />
 
@@ -275,7 +288,7 @@ const MainContent = () => {
                 </span>
               </div>
               <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                Decentralized food delivery & consumer grievance redressal on Polygon Amoy testnet. Real menus from the Kaggle Bangalore Zomato dataset.
+                <strong>Our Motto:</strong> Never get cheated by a food app again. Decentralized food delivery on Polygon Amoy with smart contract escrow, immutable IPFS evidence, and community jury redressal.
               </p>
               <div className="pt-2 text-[11px] font-bold text-gray-500">
                 <span>Bangalore, Karnataka, India</span>

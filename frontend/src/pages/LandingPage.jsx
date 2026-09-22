@@ -104,18 +104,18 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
         <div className="h-2.5 bg-brand-red w-full"></div>
 
         <div className="p-6 sm:p-12 lg:p-16 max-w-5xl mx-auto text-center space-y-8">
-          <div className="inline-flex items-center gap-2 bg-brand-redLight border border-brand-red text-brand-red px-3.5 py-1.5 rounded-full text-xs font-black tracking-wide">
-            <ShieldCheck className="w-4 h-4 text-brand-red" />
-            <span>100% QUALITY GUARANTEED • SMART CONTRACT ESCROW & JURY REDRESSAL</span>
+          <div className="inline-flex items-center gap-2 bg-brand-red text-white border-2 border-brand-dark px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-neo-sm">
+            <ShieldCheck className="w-4 h-4 text-white" />
+            <span>OUR MOTTO</span>
           </div>
 
           <div className="space-y-4">
-            <h1 className="text-4xl sm:text-6xl font-black text-brand-dark tracking-tight uppercase leading-none">
-              Delicious Food.<br />
-              <span className="text-brand-red">Zero Disappointment.</span>
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-brand-dark tracking-tight uppercase leading-[1.05]">
+              Never Get Cheated<br />
+              <span className="text-brand-red">By A Food App Again.</span>
             </h1>
             <p className="text-base sm:text-lg text-gray-700 font-medium max-w-2xl mx-auto leading-relaxed">
-              Order from Bangalore's most iconic restaurants. If food arrives cold, damaged, or wrong, file evidence in 60 seconds. Our decentralized community jury resolves grievances with automated refunds.
+              Order from Bangalore's most iconic kitchens with guaranteed protection. If your food arrives cold, damaged, or wrong, file evidence in 60 seconds. Our 5-juror community jury resolves grievances with automated on-chain refunds.
             </p>
           </div>
 
@@ -195,19 +195,25 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
       </section>
 
       {/* THE CORE USP: GRIEVANCE REDRESSAL SHOWCASE (HOOK SECTION) */}
-      <section className="bg-white border-2 border-brand-dark rounded-2xl p-6 sm:p-10 shadow-neo space-y-8">
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 bg-brand-redLight border border-brand-red text-brand-red px-3 py-1 rounded-full text-xs font-black">
-            <ShieldCheck className="w-4 h-4" />
-            <span>OUR CORE PROMISE & USP</span>
+      <section className="bg-white border-2 border-brand-dark rounded-2xl p-6 sm:p-12 shadow-neo-lg space-y-10">
+        {/* Section Header with Prominent Motto Display */}
+        <div className="text-center max-w-4xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 bg-brand-dark text-white border-2 border-brand-dark px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-neo-sm">
+            <ShieldCheck className="w-4 h-4 text-brand-red" />
+            <span>THE FOODCHAIN MOTTO & CONSUMER GUARANTEE</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black uppercase text-brand-dark tracking-tight">
-            Never Get Cheated by a Food App Again
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed">
-            Every diner has experienced cold, spilled, or incorrect food, only to be rejected by an automated chatbot.
-            FoodChain was built to give the power back to customers through decentralized escrow and peer juries.
+
+          <div className="py-2">
+            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase text-brand-dark tracking-tight leading-[1.1]">
+              "Never Get Cheated<br />
+              <span className="text-brand-red bg-red-50 border-2 border-brand-dark px-4 py-1 rounded-xl shadow-neo inline-block mt-2">
+                By A Food App Again."
+              </span>
+            </h2>
+          </div>
+
+          <p className="text-sm sm:text-base text-gray-700 font-medium leading-relaxed max-w-2xl mx-auto">
+            We are ending the era of cold soup, broken packaging, and heartless support bots telling you to accept the loss. Every FoodChain delivery is locked in smart contract escrow until you receive what you paid for.
           </p>
         </div>
 
