@@ -110,12 +110,12 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
           </div>
 
           <div className="space-y-4">
-            <h1 className="text-4xl sm:text-6xl font-black text-brand-dark tracking-tight uppercase leading-none">
-              Delicious Food.<br />
-              <span className="text-brand-red">Zero Disappointment.</span>
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-brand-dark tracking-tight uppercase leading-[1.05]">
+              Never Get Cheated<br />
+              <span className="text-brand-red">By An App Again.</span>
             </h1>
             <p className="text-base sm:text-lg text-gray-700 font-medium max-w-2xl mx-auto leading-relaxed">
-              Order from Bangalore's most iconic restaurants. If food arrives cold, damaged, or wrong, file evidence in 60 seconds. Our decentralized community jury resolves grievances with automated refunds.
+              Order from Bangalore's most iconic restaurants with guaranteed protection. If food arrives cold, damaged, or wrong, file evidence in 60 seconds. Our decentralized community jury resolves grievances with automated on-chain refunds.
             </p>
           </div>
 
@@ -200,14 +200,14 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
         <div className="text-center max-w-4xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 bg-brand-dark text-white border-2 border-brand-dark px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-neo-sm">
             <ShieldCheck className="w-4 h-4 text-brand-red" />
-            <span>THE FOODCHAIN MOTTO & CONSUMER GUARANTEE</span>
+            <span>OUR CONSUMER QUALITY GUARANTEE</span>
           </div>
 
           <div className="py-2">
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase text-brand-dark tracking-tight leading-[1.1]">
-              "Never Get Cheated<br />
+              "Delicious Food.<br />
               <span className="text-brand-red bg-red-50 border-2 border-brand-dark px-4 py-1 rounded-xl shadow-neo inline-block mt-2">
-                By A Food App Again."
+                Zero Disappointment."
               </span>
             </h2>
           </div>
