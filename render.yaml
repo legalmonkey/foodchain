@@ -1,0 +1,65 @@
+services:
+  # -------------------------------------------------------------------------
+  # FoodChain Backend Web Service (Node.js + Express + Socket.io)
+  # -------------------------------------------------------------------------
+  - type: web
+    name: foodchain-backend
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: foodchain-frontend
+          property: host
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AMOY_RPC_URL
+        value: https://rpc-amoy.polygon.technology
+      - key: PINATA_GATEWAY_URL
+        value: https://gateway.pinata.cloud/ipfs
+      - key: BACKEND_WALLET_PRIVATE_KEY
+        sync: false
+      - key: PINATA_JWT
+        sync: false
+
+  # -------------------------------------------------------------------------
+  # FoodChain Frontend Static Site (Vite + React SPA)
+  # -------------------------------------------------------------------------
+  - type: web
+    name: foodchain-frontend
+    runtime: static
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: foodchain-backend
+          property: host
+      - key: VITE_CHAIN_ID_AMOY
+        value: 80002
+      - key: VITE_AMOY_RPC_URL
+        value: https://rpc-amoy.polygon.technology
+      - key: VITE_BLOCK_EXPLORER_URL
+        value: https://amoy.polygonscan.com
+      - key: VITE_PINATA_GATEWAY_URL
+        value: https://gateway.pinata.cloud/ipfs

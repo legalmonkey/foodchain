@@ -15,11 +15,29 @@ const juryRoutes = require("./routes/jury.routes");
 const adminRoutes = require("./routes/admin.routes");
 const reputationRoutes = require("./routes/reputation.routes");
 
+const fs = require("fs");
+const path = require("path");
+
 const app = express();
 const httpServer = http.createServer(app);
 
-// Middlewares
-app.use(cors({ origin: config.frontendUrl, credentials: true }));
+// Flexible CORS for Render deployments and local development
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      origin === config.frontendUrl ||
+      origin.endsWith(".onrender.com") ||
+      origin.includes("localhost") ||
+      origin.includes("127.0.0.1")
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -44,6 +62,16 @@ app.use("/api/complaints", complaintRoutes);
 app.use("/api/juror", juryRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/reputation", reputationRoutes);
+
+// Serve frontend static build if present (for single-service Render deployments)
+const frontendDistPath = path.resolve(__dirname, "../../frontend/dist");
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api/")) return next();
+    res.sendFile(path.join(frontendDistPath, "index.html"));
+  });
+}
 
 // Global Error Handler
 app.use((err, req, res, next) => {

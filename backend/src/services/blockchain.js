@@ -13,20 +13,32 @@ let contracts = {};
 
 function getDeployedArtifact(contractName) {
   try {
-    const addressesPath = path.resolve(__dirname, "../../../contracts/deployed/contractAddresses.json");
-    const abiPath = path.resolve(__dirname, `../../../contracts/deployed/abis/${contractName}.json`);
+    const rootAddressesPath = path.resolve(__dirname, "../../../contracts/deployed/contractAddresses.json");
+    const localAddressesPath = path.resolve(__dirname, "../contracts/contractAddresses.json");
+
+    const rootAbiPath = path.resolve(__dirname, `../../../contracts/deployed/abis/${contractName}.json`);
+    const localAbiPath = path.resolve(__dirname, `../contracts/${contractName}.json`);
 
     let address = config.blockchain.contracts[contractName.charAt(0).toLowerCase() + contractName.slice(1)];
-    if (fs.existsSync(addressesPath)) {
-      const addressesData = JSON.parse(fs.readFileSync(addressesPath, "utf-8"));
+
+    if (fs.existsSync(rootAddressesPath)) {
+      const addressesData = JSON.parse(fs.readFileSync(rootAddressesPath, "utf-8"));
+      if (addressesData.addresses && addressesData.addresses[contractName]) {
+        address = addressesData.addresses[contractName];
+      }
+    } else if (fs.existsSync(localAddressesPath)) {
+      const addressesData = JSON.parse(fs.readFileSync(localAddressesPath, "utf-8"));
       if (addressesData.addresses && addressesData.addresses[contractName]) {
         address = addressesData.addresses[contractName];
       }
     }
 
-    if (fs.existsSync(abiPath)) {
-      const abiData = JSON.parse(fs.readFileSync(abiPath, "utf-8"));
-      return { address, abi: abiData.abi };
+    if (fs.existsSync(rootAbiPath)) {
+      const abiData = JSON.parse(fs.readFileSync(rootAbiPath, "utf-8"));
+      return { address, abi: abiData.abi || abiData };
+    } else if (fs.existsSync(localAbiPath)) {
+      const abiData = JSON.parse(fs.readFileSync(localAbiPath, "utf-8"));
+      return { address, abi: abiData.abi || abiData };
     }
   } catch (err) {
     console.warn(`Could not load deployment artifact for ${contractName}:`, err.message);

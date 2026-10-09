@@ -1,7 +1,19 @@
 import contractAddressesJson from './contracts/contractAddresses.json';
 
 // Centralized configuration module - Zero Hardcoding
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const rawApiUrl = import.meta.env.VITE_API_URL;
+export const API_URL = (() => {
+  if (rawApiUrl) {
+    if (rawApiUrl.startsWith('http://') || rawApiUrl.startsWith('https://')) {
+      return rawApiUrl.replace(/\/$/, '');
+    }
+    return `https://${rawApiUrl}`.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes(':5173')) {
+    return window.location.origin.replace(/\/$/, '');
+  }
+  return 'http://localhost:5000';
+})();
 export const CHAIN_ID_AMOY = Number(import.meta.env.VITE_CHAIN_ID_AMOY || 80002);
 export const AMOY_RPC_URL = import.meta.env.VITE_AMOY_RPC_URL || 'https://rpc-amoy.polygon.technology';
 export const BLOCK_EXPLORER_URL = import.meta.env.VITE_BLOCK_EXPLORER_URL || 'https://amoy.polygonscan.com';
