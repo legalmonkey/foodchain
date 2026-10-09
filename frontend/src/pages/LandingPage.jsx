@@ -14,7 +14,6 @@ import {
   Store,
   Truck,
   Sparkles,
-  Smartphone,
   Check,
   Lock,
   Camera,
@@ -761,10 +760,6 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
       {/* Download App / Consumer CTA */}
       <section className="bg-brand-red text-white border-2 border-brand-dark rounded-2xl p-8 sm:p-12 shadow-neo flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="space-y-4 text-center md:text-left max-w-xl">
-          <div className="inline-flex items-center gap-1.5 bg-white text-brand-red text-xs font-black px-3 py-1 rounded border border-black">
-            <Smartphone className="w-4 h-4" />
-            <span>PROGRESSIVE WEB APP READY</span>
-          </div>
           <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight">
             Order from anywhere in Bangalore with total peace of mind
           </h2>
