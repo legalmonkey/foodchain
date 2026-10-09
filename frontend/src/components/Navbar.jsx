@@ -10,7 +10,6 @@ import {
   UtensilsCrossed,
   Menu as MenuIcon,
   X,
-  Scale,
   FileText,
   HelpCircle,
   ShoppingBag
@@ -33,6 +32,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
     { id: 'transparency', label: 'Dispute Explorer' },
     { id: 'how-it-works', label: 'How It Works' },
     { id: 'help', label: 'Help & Safety' },
+    { id: 'juror', label: 'Community Jury' },
   ];
 
   const handleNavClick = (id) => {
@@ -77,18 +77,6 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
                 {link.label}
               </button>
             ))}
-
-            <button
-              onClick={() => handleNavClick('juror')}
-              className={`px-3.5 py-2 rounded-md text-xs font-black transition-colors flex items-center gap-1.5 ${
-                currentTab === 'juror'
-                  ? 'text-brand-dark bg-brand-yellow/30'
-                  : 'text-gray-700 hover:text-brand-dark hover:bg-brand-gray'
-              }`}
-            >
-              <Scale className="w-3.5 h-3.5 text-brand-dark" />
-              <span>Community Jury</span>
-            </button>
           </nav>
         </div>
 
@@ -218,16 +206,6 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
                 {link.label}
               </button>
             ))}
-            <button
-              onClick={() => handleNavClick('juror')}
-              className={`p-2.5 rounded-lg text-xs font-black text-left border ${
-                currentTab === 'juror'
-                  ? 'bg-brand-red text-white border-brand-dark'
-                  : 'bg-brand-grayLight text-brand-dark border-gray-200'
-              }`}
-            >
-              Community Jury
-            </button>
           </div>
 
           <div className="pt-2 border-t border-gray-200 flex flex-col gap-2">

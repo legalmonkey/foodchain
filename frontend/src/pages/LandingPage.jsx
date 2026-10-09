@@ -5,7 +5,7 @@ import {
   Clock,
   Star,
   ShieldCheck,
-  Scale,
+  Users,
   Award,
   ArrowRight,
   ChevronRight,
@@ -190,7 +190,7 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
               <span>60s IPFS Photo Proof</span>
             </div>
             <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-700 bg-brand-grayLight py-2 px-3 rounded-lg border border-gray-200">
-              <Scale className="w-4 h-4 text-brand-red shrink-0" />
+              <Users className="w-4 h-4 text-brand-red shrink-0" />
               <span>5-Juror Community Verdict</span>
             </div>
           </div>
@@ -349,7 +349,7 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
               {/* Step 3 */}
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-green-50 border-2 border-brand-dark flex items-center justify-center shrink-0 text-green-700 shadow-neo-sm">
-                  <Scale className="w-5 h-5" />
+                  <Users className="w-5 h-5" />
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-black text-brand-dark flex items-center gap-2">
@@ -642,7 +642,7 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
 
           <div className="bg-brand-grayLight border-2 border-brand-dark rounded-xl p-6 shadow-neo space-y-3">
             <div className="w-10 h-10 bg-brand-red text-white rounded-lg flex items-center justify-center border border-black">
-              <Scale className="w-5 h-5" />
+              <Users className="w-5 h-5" />
             </div>
             <h3 className="font-black text-base uppercase text-brand-dark">Decentralized Peer Jury</h3>
             <p className="text-xs text-gray-600 font-medium leading-relaxed">
@@ -727,7 +727,7 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
             className="bg-white border-2 border-brand-dark rounded-xl p-6 shadow-neo space-y-3 cursor-pointer hover:border-brand-red transition-all"
           >
             <div className="w-10 h-10 bg-brand-dark text-white rounded-lg flex items-center justify-center border border-black">
-              <Scale className="w-5 h-5" />
+              <Users className="w-5 h-5" />
             </div>
             <h3 className="text-lg font-black uppercase text-brand-dark">For Jurors</h3>
             <p className="text-xs text-gray-600 font-medium leading-relaxed">
