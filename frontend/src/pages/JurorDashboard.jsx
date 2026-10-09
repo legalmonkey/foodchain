@@ -183,8 +183,8 @@ export const JurorDashboard = ({ onNavigate }) => {
   // Shared protocol highlights component
   const ProtocolHighlights = () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-      <div className="bg-white border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm space-y-2">
-        <div className="w-10 h-10 rounded-lg bg-red-50 border-2 border-brand-dark flex items-center justify-center text-brand-red">
+      <div className="bg-white border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm space-y-2 hover:-translate-y-0.5 transition-transform">
+        <div className="w-10 h-10 rounded-lg bg-purple-100 border-2 border-brand-dark flex items-center justify-center text-purple-800 shadow-neo-sm">
           <Award className="w-5 h-5" />
         </div>
         <h4 className="font-black text-sm uppercase text-brand-dark">Staking Yield & Rewards</h4>
@@ -193,8 +193,8 @@ export const JurorDashboard = ({ onNavigate }) => {
         </p>
       </div>
 
-      <div className="bg-white border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm space-y-2">
-        <div className="w-10 h-10 rounded-lg bg-red-50 border-2 border-brand-dark flex items-center justify-center text-brand-red">
+      <div className="bg-white border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm space-y-2 hover:-translate-y-0.5 transition-transform">
+        <div className="w-10 h-10 rounded-lg bg-purple-100 border-2 border-brand-dark flex items-center justify-center text-purple-800 shadow-neo-sm">
           <ShieldCheck className="w-5 h-5" />
         </div>
         <h4 className="font-black text-sm uppercase text-brand-dark">IPFS Cryptographic Proof</h4>
@@ -203,8 +203,8 @@ export const JurorDashboard = ({ onNavigate }) => {
         </p>
       </div>
 
-      <div className="bg-white border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm space-y-2">
-        <div className="w-10 h-10 rounded-lg bg-red-50 border-2 border-brand-dark flex items-center justify-center text-brand-red">
+      <div className="bg-white border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm space-y-2 hover:-translate-y-0.5 transition-transform">
+        <div className="w-10 h-10 rounded-lg bg-purple-100 border-2 border-brand-dark flex items-center justify-center text-purple-800 shadow-neo-sm">
           <Users className="w-5 h-5" />
         </div>
         <h4 className="font-black text-sm uppercase text-brand-dark">5-Peer Random Sampling</h4>
@@ -222,9 +222,9 @@ export const JurorDashboard = ({ onNavigate }) => {
     return (
       <div className="max-w-5xl mx-auto space-y-8 py-4">
         {/* Main Onboarding Hero */}
-        <div className="neo-card p-6 sm:p-10 bg-white border-2 border-brand-dark text-brand-dark space-y-6">
+        <div className="neo-card p-6 sm:p-10 bg-gradient-to-br from-purple-100 via-purple-50 to-indigo-100 border-2 border-brand-dark text-brand-dark space-y-6 shadow-neo rounded-xl">
           <div className="space-y-3">
-            <span className="neo-badge bg-brand-red text-white uppercase tracking-wider text-[11px] font-black">
+            <span className="neo-badge bg-purple-900 text-white uppercase tracking-wider text-[11px] font-black shadow-neo-sm">
               Decentralized Community Arbitration
             </span>
             <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-brand-dark">
@@ -236,13 +236,13 @@ export const JurorDashboard = ({ onNavigate }) => {
           </div>
 
           {/* Workflow Steps Tracker */}
-          <div className="bg-brand-gray border-2 border-brand-dark p-5 rounded-lg space-y-3">
-            <span className="text-[11px] font-black uppercase text-brand-dark tracking-wider block">
+          <div className="bg-white/85 backdrop-blur-sm border-2 border-brand-dark p-5 rounded-lg space-y-3 shadow-neo-sm">
+            <span className="text-[11px] font-black uppercase text-purple-950 tracking-wider block">
               Standard Onboarding Workflow:
             </span>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-white border-2 border-brand-dark p-3.5 rounded-md flex items-start gap-3 shadow-neo-sm">
-                <div className="w-8 h-8 rounded bg-brand-dark text-white flex items-center justify-center font-black text-xs shrink-0">
+                <div className="w-8 h-8 rounded bg-purple-900 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-neo-sm">
                   1
                 </div>
                 <div>
@@ -254,7 +254,7 @@ export const JurorDashboard = ({ onNavigate }) => {
               </div>
 
               <div className="bg-white border-2 border-brand-dark p-3.5 rounded-md flex items-start gap-3 shadow-neo-sm">
-                <div className="w-8 h-8 rounded bg-brand-dark text-white flex items-center justify-center font-black text-xs shrink-0">
+                <div className="w-8 h-8 rounded bg-purple-900 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-neo-sm">
                   2
                 </div>
                 <div>
@@ -266,7 +266,7 @@ export const JurorDashboard = ({ onNavigate }) => {
               </div>
 
               <div className="bg-white border-2 border-brand-dark p-3.5 rounded-md flex items-start gap-3 shadow-neo-sm">
-                <div className="w-8 h-8 rounded bg-brand-dark text-white flex items-center justify-center font-black text-xs shrink-0">
+                <div className="w-8 h-8 rounded bg-purple-900 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-neo-sm">
                   3
                 </div>
                 <div>
@@ -311,22 +311,22 @@ export const JurorDashboard = ({ onNavigate }) => {
   if (!isUserActiveJuror) {
     return (
       <div className="max-w-5xl mx-auto space-y-8 py-4">
-        <div className="neo-card p-6 sm:p-10 bg-white border-2 border-brand-dark text-brand-dark space-y-6">
+        <div className="neo-card p-6 sm:p-10 bg-gradient-to-br from-purple-100 via-purple-50 to-indigo-100 border-2 border-brand-dark text-brand-dark space-y-6 shadow-neo rounded-xl">
           {/* Header */}
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="neo-badge bg-brand-dark text-white uppercase tracking-wider text-[11px] font-black">
+              <span className="neo-badge bg-purple-900 text-white uppercase tracking-wider text-[11px] font-black shadow-neo-sm">
                 Community Juror Enrollment
               </span>
-              <span className="text-xs font-black px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded">
+              <span className="text-xs font-black px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded shadow-neo-sm">
                 Not Staked in Juror Pool
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-brand-dark">
               Activate Your Community Juror Status
             </h1>
-            <div className="text-xs font-bold text-gray-700 bg-brand-gray p-3 rounded-lg border border-brand-dark">
-              Currently signed in as: <strong className="text-brand-dark">{user.name}</strong> (Role: <span className="uppercase text-brand-red">{user.role}</span>).
+            <div className="text-xs font-bold text-gray-800 bg-white/85 backdrop-blur-sm p-3 rounded-lg border-2 border-brand-dark shadow-neo-sm">
+              Currently signed in as: <strong className="text-brand-dark">{user.name}</strong> (Role: <span className="uppercase text-purple-900 font-black">{user.role}</span>).
               To start arbitrating disputes and earning POL rewards, you need to join the decentralized juror pool.
             </div>
           </div>
@@ -336,14 +336,14 @@ export const JurorDashboard = ({ onNavigate }) => {
             {/* Pathway A: Stake with Current Account */}
             <div className="bg-white border-2 border-brand-dark p-6 rounded-lg shadow-neo space-y-4 flex flex-col justify-between">
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-lg bg-red-50 border-2 border-brand-dark flex items-center justify-center text-brand-red">
+                <div className="w-10 h-10 rounded-lg bg-purple-100 border-2 border-brand-dark flex items-center justify-center text-purple-900 shadow-neo-sm">
                   <Coins className="w-5 h-5" />
                 </div>
                 <h3 className="font-black text-lg uppercase text-brand-dark">
                   Stake {minStake} POL with Current Account
                 </h3>
                 <p className="text-xs text-gray-600 font-semibold leading-relaxed">
-                  Deposit {minStake} POL collateral directly into the <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">UserRegistry</code> smart contract. Your deposit is 100% refundable and can be withdrawn whenever you exit the pool.
+                  Deposit {minStake} POL collateral directly into the <code className="bg-purple-50 text-purple-900 px-1 py-0.5 rounded text-[11px] font-bold border border-purple-200">UserRegistry</code> smart contract. Your deposit is 100% refundable and can be withdrawn whenever you exit the pool.
                 </p>
               </div>
 
@@ -371,9 +371,9 @@ export const JurorDashboard = ({ onNavigate }) => {
             </div>
 
             {/* Pathway B: Switch Account */}
-            <div className="bg-brand-gray border-2 border-brand-dark p-6 rounded-lg shadow-neo space-y-4 flex flex-col justify-between">
+            <div className="bg-white/90 border-2 border-brand-dark p-6 rounded-lg shadow-neo space-y-4 flex flex-col justify-between">
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-lg bg-white border-2 border-brand-dark flex items-center justify-center text-brand-dark">
+                <div className="w-10 h-10 rounded-lg bg-purple-100 border-2 border-brand-dark flex items-center justify-center text-purple-900 shadow-neo-sm">
                   <Users className="w-5 h-5" />
                 </div>
                 <h3 className="font-black text-lg uppercase text-brand-dark">
@@ -410,18 +410,18 @@ export const JurorDashboard = ({ onNavigate }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="neo-card p-6 bg-white border-2 border-brand-dark text-brand-dark flex flex-wrap justify-between items-center gap-4">
+      <div className="neo-card p-6 bg-gradient-to-br from-purple-200 via-purple-100 to-indigo-100 border-2 border-brand-dark text-brand-dark flex flex-wrap justify-between items-center gap-4 shadow-neo rounded-xl">
         <div>
-          <span className="neo-badge bg-brand-red text-white mb-2 font-black">Decentralized Arbitration</span>
+          <span className="neo-badge bg-purple-900 text-white mb-2 font-black shadow-neo-sm">Decentralized Arbitration</span>
           <h1 className="text-3xl font-black uppercase tracking-tight text-brand-dark">Juror Panel & Disputes</h1>
-          <p className="text-xs font-bold text-gray-600 mt-1">
+          <p className="text-xs font-bold text-gray-700 mt-1">
             Stake test POL to judge contested complaints. Earn rewards for majority consensus.
           </p>
         </div>
 
         {/* Stake summary card */}
-        <div className="bg-brand-gray border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm flex items-center gap-4">
-          <Award className="w-8 h-8 text-brand-red shrink-0" />
+        <div className="bg-white border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm flex items-center gap-4">
+          <Award className="w-8 h-8 text-purple-800 shrink-0" />
           <div>
             <span className="text-[10px] font-black uppercase text-gray-500 block">
               Your Juror Stake
@@ -446,7 +446,7 @@ export const JurorDashboard = ({ onNavigate }) => {
               <button
                 onClick={handleExitJuror}
                 disabled={loading}
-                className="border-2 border-brand-dark px-3 py-1 text-xs font-black bg-white hover:bg-brand-grayLight rounded shadow-neo-sm"
+                className="border-2 border-brand-dark px-3 py-1 text-xs font-black bg-white hover:bg-brand-grayLight rounded shadow-neo-sm transition-colors"
               >
                 Withdraw Stake
               </button>
