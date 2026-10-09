@@ -78,10 +78,10 @@ export const AdminDashboard = () => {
         </button>
       </div>
 
-      {/* Orders God-Mode Table */}
+      {/* Orders Administration Table */}
       <div className="space-y-4">
         <h2 className="text-xl font-black uppercase border-b-2 border-black pb-2">
-          All Orders ({orders.length}) — State Override Controls
+          All Platform Orders ({orders.length}) — Lifecycle Controls
         </h2>
 
         <div className="neo-card bg-white overflow-x-auto">
@@ -130,7 +130,7 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Complaints & Disputes God-Mode */}
+      {/* Complaints & Disputes Governance */}
       <div className="space-y-4 pt-4 border-t-4 border-black">
         <h2 className="text-xl font-black uppercase border-b-2 border-black pb-2">
           All Grievance Complaints & Active Disputes ({complaints.length})

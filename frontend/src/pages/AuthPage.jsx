@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useWeb3 } from '../context/Web3Context';
-import { Shield, Wallet, Lock, User, Phone, CheckCircle, AlertCircle, UtensilsCrossed } from 'lucide-react';
+import { Shield, Wallet, Lock, User, Phone, CheckCircle, AlertCircle, UtensilsCrossed, Check } from 'lucide-react';
 
 export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
   const { login, register } = useAuth();
@@ -9,46 +9,42 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
 
   const [isRegister, setIsRegister] = useState(false);
   const [role, setRole] = useState(initialRole === 'juror' ? 'customer' : initialRole);
-  const [walletAddress, setWalletAddress] = useState('');
-  const [password, setPassword] = useState('FoodChain@2026!');
+  const [walletAddress, setWalletAddress] = useState(account || '');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('+91-9876543210');
+  const [phone, setPhone] = useState('');
   const [restaurantName, setRestaurantName] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (initialRole === 'juror' && !account) {
-      handleQuickFill('juror');
-    } else if (account) {
+    if (account) {
       setWalletAddress(account);
     }
-  }, [account, initialRole]);
+  }, [account]);
 
-  // Demo accounts pre-set
-  const DEMO_ACCOUNTS = {
-    customer: { wallet: '0x1111111111111111111111111111111111111111', name: 'Rahul Sharma (Customer)' },
-    restaurant: { wallet: '0x5555555555555555555555555555555555555501', name: 'Truffles Manager' },
-    delivery_partner: { wallet: '0x2222222222222222222222222222222222222222', name: 'Vikram Singh (Rider)' },
-    juror: { wallet: '0x7777777777777777777777777777777777777771', name: 'Juror Panelist #1' },
-    admin: { wallet: '0x3333333333333333333333333333333333333333', name: 'System Administrator' },
-  };
-
-  const handleQuickFill = (presetRole) => {
-    const acc = DEMO_ACCOUNTS[presetRole];
-    if (acc) {
-      setRole(presetRole === 'juror' ? 'customer' : presetRole);
-      setWalletAddress(acc.wallet);
-      setPassword('FoodChain@2026!');
-      setName(acc.name);
-      setIsRegister(false);
-      setError(null);
+  const handleConnectWalletClick = async () => {
+    setError(null);
+    const res = await connectWallet();
+    if (res?.success && res.account) {
+      setWalletAddress(res.account);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    if (!walletAddress.trim()) {
+      setError('A valid Ethereum / Polygon wallet address is required.');
+      return;
+    }
+
+    if (!password) {
+      setError('Please provide a secure password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -58,8 +54,8 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
           walletAddress: walletAddress.trim(),
           password,
           name: name.trim() || 'FoodChain User',
-          phone,
-          restaurantName,
+          phone: phone.trim(),
+          restaurantName: role === 'restaurant' ? restaurantName.trim() : undefined,
         });
       } else {
         await login(walletAddress.trim(), password);
@@ -84,33 +80,45 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
             {isRegister ? 'Create FoodChain Account' : 'Authenticate with Platform'}
           </h2>
           <p className="text-xs font-bold text-gray-600 mt-1">
-            Wallet-linked role access on Polygon Amoy
+            Web3 role-based access on Polygon Amoy
           </p>
         </div>
 
-        {/* Demo Quick-fill Buttons */}
-        <div className="bg-brand-grayLight border-2 border-brand-dark p-3 rounded-lg space-y-2">
-          <span className="text-[10px] font-black uppercase tracking-wider text-gray-700 block">
-            Role Quick-Fill Demo Presets:
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            {Object.keys(DEMO_ACCOUNTS).map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => handleQuickFill(k)}
-                className="text-[11px] font-bold px-2 py-1 bg-white border border-black hover:bg-brand-yellow"
-              >
-                {k.replace('_', ' ')}
-              </button>
-            ))}
+        {/* Web3 Wallet Quick Connect Status Card */}
+        <div className="bg-brand-gray border-2 border-brand-dark p-3.5 rounded-lg flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded bg-white border border-brand-dark flex items-center justify-center text-brand-red">
+              <Wallet className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase text-gray-500 block">Web3 Identity</span>
+              {account ? (
+                <span className="text-xs font-mono font-bold text-green-800 flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5 text-green-600" />
+                  {account.slice(0, 8)}...{account.slice(-6)}
+                </span>
+              ) : (
+                <span className="text-xs font-bold text-gray-600">Wallet not connected</span>
+              )}
+            </div>
           </div>
+
+          {!account && (
+            <button
+              type="button"
+              onClick={handleConnectWalletClick}
+              disabled={connecting}
+              className="neo-btn-primary text-xs py-1.5 px-3 uppercase"
+            >
+              {connecting ? 'Connecting...' : 'Connect MetaMask'}
+            </button>
+          )}
         </div>
 
         {/* Error banner */}
         {error && (
-          <div className="bg-red-100 border-2 border-black p-3 flex items-start gap-2 text-xs font-bold text-red-900">
-            <AlertCircle className="w-4 h-4 text-red-700 flex-shrink-0 mt-0.5" />
+          <div className="bg-red-100 border-2 border-brand-dark p-3 flex items-start gap-2 text-xs font-bold text-red-900 rounded">
+            <AlertCircle className="w-4 h-4 text-brand-red flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
@@ -132,10 +140,10 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
                   key={r.id}
                   type="button"
                   onClick={() => setRole(r.id)}
-                  className={`text-xs font-bold py-2 border-2 border-black transition-all ${
+                  className={`text-xs font-bold py-2 border-2 border-brand-dark rounded-md transition-all ${
                     role === r.id
-                      ? 'bg-brand-yellow shadow-neo-sm font-black'
-                      : 'bg-white hover:bg-gray-100'
+                      ? 'bg-brand-red text-white shadow-neo-sm font-black'
+                      : 'bg-white hover:bg-gray-100 text-brand-dark'
                   }`}
                 >
                   {r.label}
@@ -156,7 +164,7 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Rahul Sharma"
+                  placeholder="Enter your full name"
                   className="neo-input w-full"
                 />
               </div>
@@ -171,7 +179,7 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
                     required
                     value={restaurantName}
                     onChange={(e) => setRestaurantName(e.target.value)}
-                    placeholder="Truffles Gourmet Kitchen"
+                    placeholder="e.g. Truffles Gourmet Kitchen"
                     className="neo-input w-full"
                   />
                 </div>
@@ -182,7 +190,8 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
                   Phone Number
                 </label>
                 <input
-                  type="text"
+                  type="tel"
+                  required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+91-9876543210"
@@ -192,19 +201,19 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
             </div>
           )}
 
-          {/* Wallet Address */}
+          {/* Wallet Address field */}
           <div>
             <div className="flex justify-between items-center mb-1">
               <label className="block text-xs font-black uppercase tracking-wider">
-                Ethereum Wallet Address (Polygon Amoy)
+                Polygon / Ethereum Wallet Address
               </label>
-              {!account && (
+              {account && (
                 <button
                   type="button"
-                  onClick={connectWallet}
-                  className="text-[10px] font-black text-brand-red underline"
+                  onClick={() => setWalletAddress(account)}
+                  className="text-[10px] font-black text-brand-red hover:underline"
                 >
-                  {connecting ? 'Connecting...' : 'Fetch from MetaMask'}
+                  Use Connected Wallet
                 </button>
               )}
             </div>
@@ -218,41 +227,48 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
             />
           </div>
 
-          {/* Password */}
+          {/* Password field */}
           <div>
             <label className="block text-xs font-black uppercase tracking-wider mb-1">
-              Account Password
+              Password
             </label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Enter your password"
               className="neo-input w-full"
             />
           </div>
 
-          {/* Submit */}
+          {/* Submit button */}
           <button
             type="submit"
             disabled={loading}
-            className="neo-btn-primary w-full py-3 text-sm font-black uppercase tracking-wider"
+            className="neo-btn-primary w-full py-3 text-xs font-black uppercase tracking-wider shadow-neo mt-2"
           >
-            {loading ? 'Processing...' : isRegister ? 'Register Account' : 'Sign In'}
+            {loading
+              ? 'Processing...'
+              : isRegister
+              ? `Register as ${role.replace('_', ' ')}`
+              : `Sign In to ${role.replace('_', ' ')} Account`}
           </button>
         </form>
 
-        {/* Toggle between login & register */}
-        <div className="text-center pt-2 border-t-2 border-black text-xs font-bold">
+        {/* Toggle Login / Register */}
+        <div className="text-center pt-2 border-t border-gray-200">
           <button
             type="button"
-            onClick={() => setIsRegister(!isRegister)}
-            className="underline text-brand-dark hover:text-brand-red"
+            onClick={() => {
+              setIsRegister(!isRegister);
+              setError(null);
+            }}
+            className="text-xs font-black text-brand-red hover:underline"
           >
             {isRegister
-              ? 'Already registered? Sign in instead'
-              : "Don't have an account yet? Create one"}
+              ? 'Already registered? Sign in with your wallet'
+              : 'New to FoodChain? Create an account'}
           </button>
         </div>
       </div>

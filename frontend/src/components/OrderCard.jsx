@@ -146,16 +146,16 @@ export const OrderCard = ({
           </button>
         )}
 
-        {/* Admin God Mode actions */}
+        {/* Admin Override actions */}
         {userRole === 'admin' && (
-          <div className="flex flex-wrap items-center gap-1.5 bg-purple-50 border border-black p-1.5">
-            <span className="text-[10px] font-black uppercase text-purple-900">Force Status:</span>
+          <div className="flex flex-wrap items-center gap-1.5 bg-brand-gray border border-brand-dark p-1.5 rounded">
+            <span className="text-[10px] font-black uppercase text-brand-dark">Force Status:</span>
             {steps.map((s) => (
               <button
                 key={s}
                 onClick={() => onStatusAdvance(order._id, s)}
-                className={`text-[10px] font-bold px-1.5 py-0.5 border border-black ${
-                  order.status === s ? 'bg-purple-600 text-white' : 'bg-white hover:bg-purple-200'
+                className={`text-[10px] font-bold px-1.5 py-0.5 border border-brand-dark rounded ${
+                  order.status === s ? 'bg-brand-dark text-white' : 'bg-white hover:bg-gray-100'
                 }`}
               >
                 {s}

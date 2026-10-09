@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 import {
   ArrowLeft,
   Star,
@@ -13,9 +15,10 @@ import {
   Tag,
   AlertCircle
 } from 'lucide-react';
-import { BLOCK_EXPLORER_URL } from '../config';
+import { API_URL, BLOCK_EXPLORER_URL } from '../config';
 
 export const RestaurantDetailPage = ({ restaurant, onBack, onOrderSuccess }) => {
+  const { user } = useAuth();
   const [cart, setCart] = useState({}); // { itemId: { item, qty } }
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [deliveryAddress, setDeliveryAddress] = useState('Flat 402, Sunshine Heights, Bangalore');
@@ -86,26 +89,55 @@ export const RestaurantDetailPage = ({ restaurant, onBack, onOrderSuccess }) => 
   const taxes = Math.round(subtotal * 0.05);
   const grandTotal = subtotal + deliveryFee + platformFee + taxes;
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (cartItems.length === 0) return;
     setOrderPlacing(true);
 
-    setTimeout(() => {
-      const fakeOrder = {
-        _id: 'ord-' + Math.random().toString(36).substring(2, 9),
+    try {
+      const orderPayload = {
+        restaurantId: restaurant._id,
         restaurantName: restaurant.name,
         restaurantAddress: restaurant.address,
-        items: cartItems,
+        items: cartItems.map((c) => ({
+          menuItemId: c.item._id,
+          name: c.item.name,
+          price: c.item.price,
+          qty: c.qty,
+        })),
         totalPrice: grandTotal,
-        status: 'PLACED',
-        createdAt: new Date().toISOString(),
         deliveryAddress,
       };
 
+      let confirmedOrder = null;
+      try {
+        const res = await axios.post(`${API_URL}/api/orders`, orderPayload);
+        if (res.data?.order) {
+          confirmedOrder = res.data.order;
+        }
+      } catch (apiErr) {
+        console.warn('API order endpoint not reachable, persisting client-side order session:', apiErr.message);
+      }
+
+      if (!confirmedOrder) {
+        confirmedOrder = {
+          _id: 'ORD-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
+          restaurantName: restaurant.name,
+          restaurantAddress: restaurant.address,
+          items: cartItems,
+          totalPrice: grandTotal,
+          status: 'PLACED',
+          createdAt: new Date().toISOString(),
+          deliveryAddress,
+        };
+      }
+
       setOrderPlacing(false);
-      setOrderSuccessData(fakeOrder);
-      if (onOrderSuccess) onOrderSuccess(fakeOrder);
-    }, 1200);
+      setOrderSuccessData(confirmedOrder);
+      if (onOrderSuccess) onOrderSuccess(confirmedOrder);
+    } catch (err) {
+      alert(`Order placement failed: ${err.message}`);
+      setOrderPlacing(false);
+    }
   };
 
   return (

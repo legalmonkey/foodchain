@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config/env");
 const User = require("../models/User");
+const inMemoryDb = require("../services/inMemoryDb");
+const mongoose = require("mongoose");
 
 const verifyToken = async (req, res, next) => {
   try {
@@ -12,7 +14,25 @@ const verifyToken = async (req, res, next) => {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, config.jwtSecret);
 
-    const user = await User.findById(decoded.id).select("-passwordHash");
+    let user = null;
+    if (mongoose.connection.readyState === 1) {
+      try {
+        user = await User.findById(decoded.id).select("-passwordHash");
+      } catch (e) {
+        // Fallback
+      }
+    }
+
+    if (!user) {
+      const memUser = inMemoryDb.users.find(
+        (u) => u._id === decoded.id || u.walletAddress.toLowerCase() === decoded.walletAddress?.toLowerCase()
+      );
+      if (memUser) {
+        const { passwordHash, ...safeUser } = memUser;
+        user = safeUser;
+      }
+    }
+
     if (!user) {
       return res.status(401).json({ error: "Invalid token: user not found." });
     }

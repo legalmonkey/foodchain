@@ -192,7 +192,7 @@ const MainContent = () => {
               <div className="space-y-6">
                 <div className="bg-brand-gray border-2 border-brand-dark p-3.5 rounded-lg flex flex-wrap items-center justify-between gap-3 shadow-neo-sm">
                   <span className="text-xs font-black uppercase text-brand-dark">
-                    Administrator God-Mode Switcher:
+                    Administrator System Switcher:
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {[
@@ -416,7 +416,7 @@ const MainContent = () => {
                 </li>
                 <li>
                   <button onClick={() => handleGetStarted('admin')} className="hover:text-brand-red transition-colors">
-                    Admin God-Mode Console
+                    Administrator Console
                   </button>
                 </li>
                 <li>

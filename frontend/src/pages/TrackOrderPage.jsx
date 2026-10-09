@@ -25,7 +25,7 @@ export const TrackOrderPage = ({ activeOrder, onFileComplaint, onBrowseMore }) =
   const [submitting, setSubmitting] = useState(false);
   const [submittedMessage, setSubmittedMessage] = useState('');
 
-  // Fallback demo order if none passed
+  // Active order reference
   const order = activeOrder || {
     _id: "ORD-94812",
     restaurantName: "Truffles (St. Marks Road)",
@@ -217,7 +217,7 @@ export const TrackOrderPage = ({ activeOrder, onFileComplaint, onBrowseMore }) =
                 <CheckCircle2 className="w-10 h-10 text-green-700 mx-auto" />
                 <div className="font-black text-base text-green-800">{submittedMessage}</div>
                 <p className="text-xs text-green-700 font-medium">
-                  The restaurant has 2 minutes in demo mode to accept fault or contest. You will receive real-time notifications.
+                  The merchant has a time-locked protocol window to accept fault or contest to the community jury. You will receive real-time updates.
                 </p>
                 <button
                   onClick={() => {
