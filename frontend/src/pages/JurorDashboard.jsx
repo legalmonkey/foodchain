@@ -6,11 +6,26 @@ import { useAuth } from '../context/AuthContext';
 import { useWeb3 } from '../context/Web3Context';
 import { useContract } from '../hooks/useContract';
 import { useSocket } from '../hooks/useSocket';
-import { Scale, Award, ShieldAlert, CheckCircle2, XCircle, Clock, ExternalLink, ArrowRight } from 'lucide-react';
+import {
+  Award,
+  ShieldAlert,
+  ShieldCheck,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ExternalLink,
+  ArrowRight,
+  Users,
+  Lock,
+  LogIn,
+  Coins,
+  Wallet,
+  AlertTriangle
+} from 'lucide-react';
 
-export const JurorDashboard = () => {
+export const JurorDashboard = ({ onNavigate }) => {
   const { user } = useAuth();
-  const { account, signer, connectWallet } = useWeb3();
+  const { account, signer, connectWallet, connecting } = useWeb3();
 
   const userRegistryContract = useContract('UserRegistry', true);
   const disputeResolutionContract = useContract('DisputeResolution', true);
@@ -35,12 +50,28 @@ export const JurorDashboard = () => {
     },
   });
 
+  // Query on-chain min juror stake
   useEffect(() => {
-    if (account) {
+    const fetchMinStake = async () => {
+      if (userRegistryContract) {
+        try {
+          const min = await userRegistryContract.minJurorStake();
+          setMinStake(ethers.formatEther(min));
+        } catch (err) {
+          console.warn('Could not read minJurorStake:', err.message);
+        }
+      }
+    };
+    fetchMinStake();
+  }, [userRegistryContract]);
+
+  // Check status & fetch assigned cases when logged in & account available
+  useEffect(() => {
+    if (account && user) {
       checkJurorStatus();
       fetchAssignedCases();
     }
-  }, [account]);
+  }, [account, user]);
 
   const checkJurorStatus = async () => {
     if (!userRegistryContract || !account) return;
@@ -58,6 +89,7 @@ export const JurorDashboard = () => {
   };
 
   const fetchAssignedCases = async () => {
+    if (!user) return;
     try {
       const res = await axios.get(`${API_URL}/api/juror/cases/assigned`);
       setAssignedCases(res.data);
@@ -79,8 +111,10 @@ export const JurorDashboard = () => {
       await tx.wait();
 
       await axios.post(`${API_URL}/api/juror/register`);
+      setIsJuror(true);
       alert(`✓ Successfully joined Juror Pool with ${minStake} POL staked!`);
-      checkJurorStatus();
+      await checkJurorStatus();
+      await fetchAssignedCases();
     } catch (err) {
       alert(`Failed to stake as juror: ${err.message}`);
     } finally {
@@ -94,8 +128,9 @@ export const JurorDashboard = () => {
       if (!userRegistryContract) throw new Error('Contract not connected');
       const tx = await userRegistryContract.exitJuror();
       await tx.wait();
+      setIsJuror(false);
       alert('✓ Stake withdrawn and exited from Juror Pool.');
-      checkJurorStatus();
+      await checkJurorStatus();
     } catch (err) {
       alert(`Failed to exit juror pool: ${err.message}`);
     } finally {
@@ -142,27 +177,257 @@ export const JurorDashboard = () => {
     }
   };
 
+  // Check whether the user is recognized as a juror
+  const isUserActiveJuror = Boolean(user && (user.isJuror === true || user.role === 'juror' || isJuror));
+
+  // Shared protocol highlights component
+  const ProtocolHighlights = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+      <div className="bg-white border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm space-y-2">
+        <div className="w-10 h-10 rounded-lg bg-red-50 border-2 border-brand-dark flex items-center justify-center text-brand-red">
+          <Award className="w-5 h-5" />
+        </div>
+        <h4 className="font-black text-sm uppercase text-brand-dark">Staking Yield & Rewards</h4>
+        <p className="text-xs text-gray-600 font-semibold leading-relaxed">
+          Jurors voting with the majority consensus automatically earn a POL bounty split from contested grievance fees.
+        </p>
+      </div>
+
+      <div className="bg-white border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm space-y-2">
+        <div className="w-10 h-10 rounded-lg bg-red-50 border-2 border-brand-dark flex items-center justify-center text-brand-red">
+          <ShieldCheck className="w-5 h-5" />
+        </div>
+        <h4 className="font-black text-sm uppercase text-brand-dark">IPFS Cryptographic Proof</h4>
+        <p className="text-xs text-gray-600 font-semibold leading-relaxed">
+          Evaluate tamper-proof delivery photos, packing seals, and temperature logs stored immutably on IPFS before casting your vote.
+        </p>
+      </div>
+
+      <div className="bg-white border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm space-y-2">
+        <div className="w-10 h-10 rounded-lg bg-red-50 border-2 border-brand-dark flex items-center justify-center text-brand-red">
+          <Users className="w-5 h-5" />
+        </div>
+        <h4 className="font-black text-sm uppercase text-brand-dark">5-Peer Random Sampling</h4>
+        <p className="text-xs text-gray-600 font-semibold leading-relaxed">
+          Each dispute samples 5 independent staked jurors on Polygon Amoy. No centralized admin can override peer consensus.
+        </p>
+      </div>
+    </div>
+  );
+
+  // ----------------------------------------------------
+  // CASE 1: Visitor NOT logged in
+  // ----------------------------------------------------
+  if (!user) {
+    return (
+      <div className="max-w-5xl mx-auto space-y-8 py-4">
+        {/* Main Onboarding Hero */}
+        <div className="neo-card p-6 sm:p-10 bg-white border-2 border-brand-dark text-brand-dark space-y-6">
+          <div className="space-y-3">
+            <span className="neo-badge bg-brand-red text-white uppercase tracking-wider text-[11px] font-black">
+              Decentralized Community Arbitration
+            </span>
+            <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-brand-dark">
+              Join the Community Jury
+            </h1>
+            <p className="text-sm font-bold text-gray-700 max-w-2xl leading-relaxed">
+              When restaurants or riders contest a customer complaint, the protocol draws 5 randomly selected jurors from the community pool to inspect IPFS evidence, cast binding verdicts, and earn POL rewards.
+            </p>
+          </div>
+
+          {/* Workflow Steps Tracker */}
+          <div className="bg-brand-gray border-2 border-brand-dark p-5 rounded-lg space-y-3">
+            <span className="text-[11px] font-black uppercase text-brand-dark tracking-wider block">
+              Standard Onboarding Workflow:
+            </span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="bg-white border-2 border-brand-dark p-3.5 rounded-md flex items-start gap-3 shadow-neo-sm">
+                <div className="w-8 h-8 rounded bg-brand-dark text-white flex items-center justify-center font-black text-xs shrink-0">
+                  1
+                </div>
+                <div>
+                  <h5 className="font-black text-xs uppercase text-brand-dark">Log In or Register</h5>
+                  <p className="text-[11px] text-gray-600 font-semibold mt-0.5">
+                    Sign in with your Web3 wallet or create a juror account.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white border-2 border-brand-dark p-3.5 rounded-md flex items-start gap-3 shadow-neo-sm">
+                <div className="w-8 h-8 rounded bg-brand-dark text-white flex items-center justify-center font-black text-xs shrink-0">
+                  2
+                </div>
+                <div>
+                  <h5 className="font-black text-xs uppercase text-brand-dark">Stake {minStake} POL</h5>
+                  <p className="text-[11px] text-gray-600 font-semibold mt-0.5">
+                    Deposit refundable collateral into the UserRegistry contract.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white border-2 border-brand-dark p-3.5 rounded-md flex items-start gap-3 shadow-neo-sm">
+                <div className="w-8 h-8 rounded bg-brand-dark text-white flex items-center justify-center font-black text-xs shrink-0">
+                  3
+                </div>
+                <div>
+                  <h5 className="font-black text-xs uppercase text-brand-dark">Review & Earn</h5>
+                  <p className="text-[11px] text-gray-600 font-semibold mt-0.5">
+                    Cast majority votes on real disputes and claim rewards.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action CTAs */}
+          <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <button
+              onClick={() => onNavigate && onNavigate('auth', 'juror')}
+              className="neo-btn-primary flex items-center justify-center gap-2 py-3 px-6 text-sm font-black uppercase"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Log In to Juror Account</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onNavigate && onNavigate('auth', 'juror')}
+              className="neo-btn-secondary flex items-center justify-center gap-2 py-3 px-6 text-sm font-black uppercase"
+            >
+              <Users className="w-4 h-4" />
+              <span>Register as New Juror</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Feature Highlights */}
+        <ProtocolHighlights />
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------
+  // CASE 2: Logged in, but NOT a Juror
+  // ----------------------------------------------------
+  if (!isUserActiveJuror) {
+    return (
+      <div className="max-w-5xl mx-auto space-y-8 py-4">
+        <div className="neo-card p-6 sm:p-10 bg-white border-2 border-brand-dark text-brand-dark space-y-6">
+          {/* Header */}
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="neo-badge bg-brand-dark text-white uppercase tracking-wider text-[11px] font-black">
+                Community Juror Enrollment
+              </span>
+              <span className="text-xs font-black px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded">
+                Not Staked in Juror Pool
+              </span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-brand-dark">
+              Activate Your Community Juror Status
+            </h1>
+            <div className="text-xs font-bold text-gray-700 bg-brand-gray p-3 rounded-lg border border-brand-dark">
+              Currently signed in as: <strong className="text-brand-dark">{user.name}</strong> (Role: <span className="uppercase text-brand-red">{user.role}</span>).
+              To start arbitrating disputes and earning POL rewards, you need to join the decentralized juror pool.
+            </div>
+          </div>
+
+          {/* Action Pathways */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            {/* Pathway A: Stake with Current Account */}
+            <div className="bg-white border-2 border-brand-dark p-6 rounded-lg shadow-neo space-y-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="w-10 h-10 rounded-lg bg-red-50 border-2 border-brand-dark flex items-center justify-center text-brand-red">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <h3 className="font-black text-lg uppercase text-brand-dark">
+                  Stake {minStake} POL with Current Account
+                </h3>
+                <p className="text-xs text-gray-600 font-semibold leading-relaxed">
+                  Deposit {minStake} POL collateral directly into the <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">UserRegistry</code> smart contract. Your deposit is 100% refundable and can be withdrawn whenever you exit the pool.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                {!account ? (
+                  <button
+                    onClick={connectWallet}
+                    disabled={connecting}
+                    className="neo-btn-primary w-full py-3 text-xs font-black uppercase flex items-center justify-center gap-2"
+                  >
+                    <Wallet className="w-4 h-4" />
+                    <span>Connect Wallet to Stake</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleBecomeJuror}
+                    disabled={loading}
+                    className="neo-btn-primary w-full py-3 text-xs font-black uppercase flex items-center justify-center gap-2"
+                  >
+                    <Coins className="w-4 h-4" />
+                    <span>{loading ? 'Confirming On-Chain...' : `Stake ${minStake} POL & Join Pool`}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Pathway B: Switch Account */}
+            <div className="bg-brand-gray border-2 border-brand-dark p-6 rounded-lg shadow-neo space-y-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="w-10 h-10 rounded-lg bg-white border-2 border-brand-dark flex items-center justify-center text-brand-dark">
+                  <Users className="w-5 h-5" />
+                </div>
+                <h3 className="font-black text-lg uppercase text-brand-dark">
+                  Switch to Existing Juror Account
+                </h3>
+                <p className="text-xs text-gray-600 font-semibold leading-relaxed">
+                  Already have another wallet registered and staked as a juror? Switch accounts now to review your assigned disputes.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => onNavigate && onNavigate('auth', 'juror')}
+                  className="neo-btn-secondary w-full py-3 text-xs font-black uppercase flex items-center justify-center gap-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Switch Account / Log In as Juror</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Highlights */}
+        <ProtocolHighlights />
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------
+  // CASE 3: Authenticated Active Juror Dashboard
+  // ----------------------------------------------------
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="neo-card p-6 bg-purple-200 border-4 border-black text-brand-dark flex flex-wrap justify-between items-center gap-4">
+      <div className="neo-card p-6 bg-white border-2 border-brand-dark text-brand-dark flex flex-wrap justify-between items-center gap-4">
         <div>
-          <span className="neo-badge bg-black text-white mb-2">Decentralized Arbitration</span>
-          <h1 className="text-3xl font-black uppercase">Juror Panel & Disputes</h1>
-          <p className="text-xs font-bold text-gray-800 mt-1">
+          <span className="neo-badge bg-brand-red text-white mb-2 font-black">Decentralized Arbitration</span>
+          <h1 className="text-3xl font-black uppercase tracking-tight text-brand-dark">Juror Panel & Disputes</h1>
+          <p className="text-xs font-bold text-gray-600 mt-1">
             Stake test POL to judge contested complaints. Earn rewards for majority consensus.
           </p>
         </div>
 
         {/* Stake summary card */}
-        <div className="bg-white border-3 border-black p-4 shadow-neo flex items-center gap-4">
-          <Scale className="w-8 h-8 text-purple-700" />
+        <div className="bg-brand-gray border-2 border-brand-dark p-4 rounded-lg shadow-neo-sm flex items-center gap-4">
+          <Award className="w-8 h-8 text-brand-red shrink-0" />
           <div>
             <span className="text-[10px] font-black uppercase text-gray-500 block">
               Your Juror Stake
             </span>
-            <span className="text-xl font-black">{jurorStake} POL</span>
-            <span className="text-[10px] flex items-center gap-1.5 font-bold text-gray-600 mt-0.5">
+            <span className="text-xl font-black text-brand-dark">{jurorStake} POL</span>
+            <span className="text-[10px] flex items-center gap-1.5 font-bold text-gray-700 mt-0.5">
               <span className={`w-2 h-2 rounded-full ${isJuror ? 'bg-green-600' : 'bg-gray-400'}`} />
               Status: {isJuror ? 'Active in Pool' : 'Not Staked'}
             </span>
@@ -181,7 +446,7 @@ export const JurorDashboard = () => {
               <button
                 onClick={handleExitJuror}
                 disabled={loading}
-                className="border-2 border-black px-2 py-1 text-xs font-bold bg-gray-100 hover:bg-gray-200"
+                className="border-2 border-brand-dark px-3 py-1 text-xs font-black bg-white hover:bg-brand-grayLight rounded shadow-neo-sm"
               >
                 Withdraw Stake
               </button>
@@ -192,8 +457,8 @@ export const JurorDashboard = () => {
 
       {/* Assigned cases list */}
       <div className="space-y-4">
-        <div className="border-b-2 border-black pb-2 flex justify-between items-center">
-          <h2 className="text-xl font-black uppercase flex items-center gap-2">
+        <div className="border-b-2 border-brand-dark pb-2 flex justify-between items-center">
+          <h2 className="text-xl font-black uppercase flex items-center gap-2 text-brand-dark">
             <ShieldAlert className="w-5 h-5 text-brand-red" />
             <span>Disputes Assigned to Your Wallet ({assignedCases.length})</span>
           </h2>
@@ -201,24 +466,24 @@ export const JurorDashboard = () => {
         </div>
 
         {assignedCases.length === 0 ? (
-          <div className="neo-card p-8 text-center space-y-3 bg-white">
-            <Scale className="w-10 h-10 text-gray-400 mx-auto" />
-            <h3 className="font-black text-lg">No Active Assigned Disputes</h3>
+          <div className="neo-card p-8 text-center space-y-3 bg-white border-2 border-brand-dark">
+            <Award className="w-10 h-10 text-brand-red mx-auto" />
+            <h3 className="font-black text-lg text-brand-dark">No Active Assigned Disputes</h3>
             <p className="text-xs text-gray-600 font-bold max-w-md mx-auto">
-              When restaurants or delivery partners contest a customer complaint, the contract selects 5 jurors from the pool to arbitrate with real IPFS evidence!
+              You are enrolled in the juror pool! When restaurants or delivery partners contest a customer complaint, the contract selects 5 jurors from the pool to arbitrate with real IPFS evidence.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {assignedCases.map((c) => (
-              <div key={c.caseId} className="neo-card p-5 space-y-3 bg-white">
-                <div className="flex justify-between items-center border-b-2 border-black pb-2">
-                  <span className="font-black text-base">Case #{c.caseId}</span>
+              <div key={c.caseId} className="neo-card p-5 space-y-3 bg-white border-2 border-brand-dark">
+                <div className="flex justify-between items-center border-b-2 border-brand-dark pb-2">
+                  <span className="font-black text-base text-brand-dark">Case #{c.caseId}</span>
                   <span
                     className={`neo-badge ${
                       c.finalized
-                        ? 'bg-green-200 text-green-900'
-                        : 'bg-yellow-200 text-yellow-900 animate-pulse'
+                        ? 'bg-green-200 text-green-900 border-green-800'
+                        : 'bg-yellow-200 text-yellow-900 animate-pulse border-yellow-800'
                     }`}
                   >
                     {c.finalized ? 'Finalized' : 'Voting Active'}
@@ -230,7 +495,7 @@ export const JurorDashboard = () => {
                     <span className="text-gray-500">Complaint: </span>
                     <strong className="text-brand-red">{c.complaint?.category}</strong>
                   </div>
-                  <p className="text-xs italic bg-gray-50 p-2 border border-black">
+                  <p className="text-xs italic bg-gray-50 p-2 border border-brand-dark rounded">
                     "{c.complaint?.description || 'No text description provided'}"
                   </p>
                   <div>
@@ -241,7 +506,7 @@ export const JurorDashboard = () => {
 
                 {/* Evidence preview */}
                 {c.evidenceUrl && (
-                  <div className="border border-black p-2 bg-brand-muted flex justify-between items-center text-xs font-bold">
+                  <div className="border border-brand-dark p-2 bg-brand-gray flex justify-between items-center text-xs font-bold rounded">
                     <span>IPFS Evidence:</span>
                     <a
                       href={c.evidenceUrl}
@@ -257,16 +522,16 @@ export const JurorDashboard = () => {
 
                 {/* Current Vote Tallies */}
                 <div className="grid grid-cols-2 gap-2 text-center text-xs font-black pt-1">
-                  <div className="border-2 border-black p-1.5 bg-red-100 text-red-950">
+                  <div className="border-2 border-brand-dark p-1.5 bg-red-100 text-red-950 rounded">
                     Uphold: {c.upholdVotes}
                   </div>
-                  <div className="border-2 border-black p-1.5 bg-green-100 text-green-950">
+                  <div className="border-2 border-brand-dark p-1.5 bg-green-100 text-green-950 rounded">
                     Reject: {c.rejectVotes}
                   </div>
                 </div>
 
                 {/* Your Vote status */}
-                <div className="border-t-2 border-black pt-3 flex justify-between items-center">
+                <div className="border-t-2 border-brand-dark pt-3 flex justify-between items-center">
                   <span className="text-xs font-bold">
                     {c.myVote === 1
                       ? 'Voted: Uphold'

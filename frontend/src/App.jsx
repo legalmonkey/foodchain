@@ -122,13 +122,26 @@ const MainContent = () => {
         );
 
       case 'juror':
-        return <JurorDashboard />;
+        return (
+          <JurorDashboard
+            onNavigate={(newView, role) => {
+              if (role) setTargetRole(role);
+              setView(newView);
+            }}
+          />
+        );
 
       case 'auth':
         return (
           <AuthPage
             initialRole={targetRole}
-            onSuccess={() => setView('dashboard')}
+            onSuccess={() => {
+              if (targetRole === 'juror') {
+                setView('juror');
+              } else {
+                setView('dashboard');
+              }
+            }}
           />
         );
 
@@ -137,7 +150,13 @@ const MainContent = () => {
           return (
             <AuthPage
               initialRole={targetRole}
-              onSuccess={() => setView('dashboard')}
+              onSuccess={() => {
+                if (targetRole === 'juror') {
+                  setView('juror');
+                } else {
+                  setView('dashboard');
+                }
+              }}
             />
           );
         }
@@ -149,6 +168,15 @@ const MainContent = () => {
             return <RestaurantDashboard />;
           case 'delivery_partner':
             return <DeliveryDashboard />;
+          case 'juror':
+            return (
+              <JurorDashboard
+                onNavigate={(newView, role) => {
+                  if (role) setTargetRole(role);
+                  setView(newView);
+                }}
+              />
+            );
           case 'admin':
             return (
               <div className="space-y-6">
@@ -183,7 +211,14 @@ const MainContent = () => {
                 {targetRole === 'customer' && <CustomerDashboard />}
                 {targetRole === 'restaurant' && <RestaurantDashboard />}
                 {targetRole === 'delivery' && <DeliveryDashboard />}
-                {targetRole === 'juror' && <JurorDashboard />}
+                {targetRole === 'juror' && (
+                  <JurorDashboard
+                    onNavigate={(newView, role) => {
+                      if (role) setTargetRole(role);
+                      setView(newView);
+                    }}
+                  />
+                )}
               </div>
             );
           default:

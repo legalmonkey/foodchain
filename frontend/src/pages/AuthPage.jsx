@@ -18,10 +18,12 @@ export const AuthPage = ({ initialRole = 'customer', onSuccess }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (account) {
+    if (initialRole === 'juror' && !account) {
+      handleQuickFill('juror');
+    } else if (account) {
       setWalletAddress(account);
     }
-  }, [account]);
+  }, [account, initialRole]);
 
   // Demo accounts pre-set
   const DEMO_ACCOUNTS = {
