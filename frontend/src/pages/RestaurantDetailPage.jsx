@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Star,
@@ -21,6 +21,20 @@ export const RestaurantDetailPage = ({ restaurant, onBack, onOrderSuccess }) => 
   const [deliveryAddress, setDeliveryAddress] = useState('Flat 402, Sunshine Heights, Bangalore');
   const [orderPlacing, setOrderPlacing] = useState(false);
   const [orderSuccessData, setOrderSuccessData] = useState(null);
+
+  // Ensure the view always displays the top of the restaurant & menu
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    const timer = setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 10);
+    return () => clearTimeout(timer);
+  }, [restaurant]);
 
   if (!restaurant) {
     return (

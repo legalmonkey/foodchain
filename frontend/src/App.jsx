@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Web3Provider } from './context/Web3Context';
 import { Navbar } from './components/Navbar';
@@ -17,7 +17,7 @@ import { JurorDashboard } from './pages/JurorDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import {
   ShieldCheck,
-  Scale,
+  Award,
   UtensilsCrossed,
   ExternalLink,
   HelpCircle,
@@ -36,6 +36,13 @@ const MainContent = () => {
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [restaurantSearchQuery, setRestaurantSearchQuery] = useState('');
   const [activeOrder, setActiveOrder] = useState(null);
+
+  // Scroll to top of window whenever the active view changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [view]);
 
   if (loading) {
     return (
@@ -65,6 +72,9 @@ const MainContent = () => {
   const handleSelectRestaurant = (restaurant) => {
     setSelectedRestaurant(restaurant);
     setView('restaurant-detail');
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   };
 
   const handleOrderSuccess = (order) => {
@@ -281,7 +291,7 @@ const MainContent = () => {
                 view === 'juror' ? 'text-brand-red underline' : 'text-gray-700'
               }`}
             >
-              <Scale className="w-3.5 h-3.5" />
+              <Award className="w-3.5 h-3.5" />
               <span>Community Jury & Disputes</span>
             </button>
             {activeOrder && (
