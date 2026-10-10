@@ -30,6 +30,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
     switchNetwork,
     connecting,
     error,
+    clearError,
     showInstallModal,
     setShowInstallModal,
   } = useWeb3();
@@ -335,6 +336,23 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
           </div>
         )}
       </header>
+
+      {/* Web3 Notification / Error Banner */}
+      {error && (
+        <div className="bg-amber-100 border-b-2 border-brand-dark px-4 py-2.5 text-xs font-black text-amber-950 flex items-center justify-between shadow-neo-sm animate-fadeIn">
+          <div className="flex items-center gap-2 max-w-4xl mx-auto flex-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-600 animate-pulse shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={clearError}
+            className="p-1 hover:bg-amber-200 rounded text-amber-900 shrink-0 ml-2"
+            title="Dismiss notice"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Web3 MetaMask Required Modal */}
       {showInstallModal && (
