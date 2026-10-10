@@ -15,7 +15,7 @@ export const API_URL = (() => {
   return 'http://localhost:5000';
 })();
 export const CHAIN_ID_AMOY = Number(import.meta.env.VITE_CHAIN_ID_AMOY || 80002);
-export const AMOY_RPC_URL = import.meta.env.VITE_AMOY_RPC_URL || 'https://rpc-amoy.polygon.technology';
+export const AMOY_RPC_URL = import.meta.env.VITE_AMOY_RPC_URL || 'https://polygon-amoy-bor-rpc.publicnode.com';
 export const BLOCK_EXPLORER_URL = import.meta.env.VITE_BLOCK_EXPLORER_URL || 'https://amoy.polygonscan.com';
 export const PINATA_GATEWAY_URL = import.meta.env.VITE_PINATA_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs';
 

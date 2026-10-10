@@ -26,7 +26,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: AMOY_RPC_URL
-        value: https://rpc-amoy.polygon.technology
+        value: https://polygon-amoy-bor-rpc.publicnode.com
       - key: PINATA_GATEWAY_URL
         value: https://gateway.pinata.cloud/ipfs
       - key: BACKEND_WALLET_PRIVATE_KEY
@@ -56,7 +56,7 @@ services:
       - key: VITE_CHAIN_ID_AMOY
         value: 80002
       - key: VITE_AMOY_RPC_URL
-        value: https://rpc-amoy.polygon.technology
+        value: https://polygon-amoy-bor-rpc.publicnode.com
       - key: VITE_BLOCK_EXPLORER_URL
         value: https://amoy.polygonscan.com
       - key: VITE_PINATA_GATEWAY_URL
