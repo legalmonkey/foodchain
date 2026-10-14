@@ -44,6 +44,17 @@ app.use(express.urlencoded({ extended: true }));
 // Socket.io initialization
 const io = setupSockets(httpServer);
 
+// Root endpoint
+app.get("/", (req, res) => {
+  res.json({
+    status: "online",
+    service: "FoodChain Protocol API",
+    version: "1.0.0",
+    healthCheck: "/api/health",
+    frontendOrigin: config.frontendUrl,
+  });
+});
+
 // Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({
