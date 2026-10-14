@@ -7,7 +7,7 @@ import { useContract } from '../hooks/useContract';
 import { useSocket } from '../hooks/useSocket';
 import { OrderCard } from '../components/OrderCard';
 import { ComplaintCard } from '../components/ComplaintCard';
-import { Award, Plus, ChefHat, AlertOctagon, CheckCircle2, X, Utensils, Scale, ClipboardList } from 'lucide-react';
+import { Award, Plus, ChefHat, AlertOctagon, CheckCircle2, X, Utensils, Scale, ClipboardList, Trash2 } from 'lucide-react';
 
 export const RestaurantDashboard = () => {
   const { user } = useAuth();
@@ -195,6 +195,21 @@ export const RestaurantDashboard = () => {
     }
   };
 
+  const handleDeleteMenuItem = async (itemId, itemName) => {
+    if (!window.confirm(`Are you sure you want to delete "${itemName}" from the menu?`)) {
+      return;
+    }
+
+    try {
+      const restId = restaurantProfile?._id || 'my-restaurant';
+      await axios.delete(`${API_URL}/api/restaurants/${restId}/menu/${itemId}`);
+      setMenuItems((prev) => prev.filter((m) => String(m._id) !== String(itemId)));
+      alert(`✓ "${itemName}" has been deleted from the menu.`);
+    } catch (err) {
+      alert(`Failed to delete dish: ${err.response?.data?.error || err.message}`);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Restaurant Header */}
@@ -350,22 +365,31 @@ export const RestaurantDashboard = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {menuItems.map((item) => (
-              <div key={item._id} className="neo-card p-4 space-y-2 bg-white">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`w-2.5 h-2.5 border border-black ${
-                        item.isVeg ? 'bg-green-500' : 'bg-red-500'
-                      }`}
-                    />
-                    <h4 className="font-black text-sm">{item.name}</h4>
+              <div key={item._id} className="neo-card p-4 space-y-3 bg-white flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`w-2.5 h-2.5 border border-black shrink-0 ${
+                          item.isVeg ? 'bg-green-500' : 'bg-red-500'
+                        }`}
+                      />
+                      <h4 className="font-black text-sm">{item.name}</h4>
+                    </div>
+                    <span className="neo-badge bg-brand-muted shrink-0">{item.category}</span>
                   </div>
-                  <span className="neo-badge bg-brand-muted">{item.category}</span>
+                  <p className="text-xs text-gray-600 line-clamp-2">{item.description}</p>
                 </div>
-                <p className="text-xs text-gray-600">{item.description}</p>
                 <div className="border-t border-black pt-2 flex justify-between items-center font-black text-sm">
-                  <span>Price:</span>
                   <span>₹{item.price}</span>
+                  <button
+                    onClick={() => handleDeleteMenuItem(item._id, item.name)}
+                    className="px-2.5 py-1 text-xs font-black text-red-600 hover:text-white hover:bg-red-600 border border-red-600 rounded flex items-center gap-1 transition-all active:translate-y-0.5"
+                    title={`Delete ${item.name}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
                 </div>
               </div>
             ))}

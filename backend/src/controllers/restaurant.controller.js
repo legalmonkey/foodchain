@@ -266,3 +266,42 @@ exports.updateMenuItem = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.deleteMenuItem = async (req, res) => {
+  try {
+    const { id: restId, itemId } = req.params;
+    let deleted = false;
+
+    // 1. Delete from MongoDB if connected
+    if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(itemId)) {
+      try {
+        const result = await MenuItem.findByIdAndDelete(itemId);
+        if (result) deleted = true;
+      } catch (e) {}
+    }
+
+    // 2. Delete from in-memory collection if present
+    const idx = inMemoryDb.menuItems.findIndex((m) => String(m._id) === String(itemId));
+    if (idx !== -1) {
+      inMemoryDb.menuItems.splice(idx, 1);
+      deleted = true;
+    }
+
+    // 3. Delete from embedded restaurant menu array if present (fallback)
+    if (inMemoryDb.restaurants) {
+      const rest = inMemoryDb.restaurants.find((r) => String(r._id) === String(restId));
+      if (rest && rest.menu) {
+        const mIdx = rest.menu.findIndex((m) => String(m._id) === String(itemId));
+        if (mIdx !== -1) {
+          rest.menu.splice(mIdx, 1);
+          deleted = true;
+        }
+      }
+    }
+
+    res.json({ message: "Dish deleted successfully", itemId });
+  } catch (err) {
+    console.error("deleteMenuItem error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
