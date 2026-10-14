@@ -534,7 +534,7 @@ export const LandingPage = ({ onExploreRestaurants, onSelectRestaurant, onNaviga
               Top Brands in Bangalore
             </h2>
             <p className="text-xs text-gray-600 font-medium">
-              Curated iconic chains from the Kaggle Bangalore Zomato dataset with on-chain verified trust
+              Curated iconic restaurants with verified on-chain trust scores and transparent dispute tracking
             </p>
           </div>
           <button

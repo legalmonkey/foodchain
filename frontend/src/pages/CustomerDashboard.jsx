@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API_URL, PINATA_GATEWAY_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
@@ -16,10 +16,10 @@ import {
   Minus,
   AlertTriangle,
   Award,
+  ShieldAlert,
   X,
   Send,
-  Loader2,
-  Scale
+  Loader2
 } from 'lucide-react';
 import { KAGGLE_RESTAURANTS } from '../data/zomatoRestaurants';
 
@@ -27,6 +27,8 @@ export const CustomerDashboard = () => {
   const { user } = useAuth();
   const { signer, account, connectWallet } = useWeb3();
   const complaintRegistryContract = useContract('ComplaintRegistry', true);
+
+  const menuListRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState('browse'); // 'browse' | 'orders' | 'complaints'
   const [restaurants, setRestaurants] = useState([]);
@@ -99,13 +101,22 @@ export const CustomerDashboard = () => {
 
   const openRestaurantMenu = async (restaurant) => {
     setSelectedRestaurant(restaurant);
+    if (menuListRef.current) {
+      menuListRef.current.scrollTop = 0;
+    }
     if (restaurant.menu && restaurant.menu.length > 0) {
       setMenuItems(restaurant.menu);
+      setTimeout(() => {
+        if (menuListRef.current) menuListRef.current.scrollTop = 0;
+      }, 50);
       return;
     }
     try {
       const res = await axios.get(`${API_URL}/api/restaurants/${restaurant._id}`);
       setMenuItems(res.data.menuItems || []);
+      setTimeout(() => {
+        if (menuListRef.current) menuListRef.current.scrollTop = 0;
+      }, 50);
     } catch (err) {
       console.error('Error fetching menu:', err);
     }
@@ -274,7 +285,7 @@ export const CustomerDashboard = () => {
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
               type="text"
-              placeholder="Search Kaggle Zomato restaurants, cuisines, burgers, biryani, pizza..."
+              placeholder="Search restaurants, cuisines, burgers, biryani, pizza..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="neo-input w-full pl-10 text-sm py-3"
@@ -312,7 +323,7 @@ export const CustomerDashboard = () => {
 
                 <div className="p-4 pt-0">
                   <button className="neo-btn-primary w-full text-xs py-2">
-                    View Authentic Menu ({restaurant.itemCount || 4} Dishes)
+                    View Menu ({restaurant.itemCount || 4} Dishes)
                   </button>
                 </div>
               </div>
@@ -334,7 +345,7 @@ export const CustomerDashboard = () => {
               <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto" />
               <h3 className="font-black text-lg text-brand-dark">No Orders Placed Yet</h3>
               <p className="text-xs text-gray-600 font-bold">
-                Browse our Kaggle Zomato restaurants and place your first food order!
+                Browse our curated restaurants and place your first food order!
               </p>
               <button onClick={() => setActiveTab('browse')} className="neo-btn-primary text-xs py-2 px-4">
                 Browse Restaurants
@@ -365,7 +376,7 @@ export const CustomerDashboard = () => {
 
           {complaints.length === 0 ? (
             <div className="neo-card p-8 text-center space-y-2 bg-white">
-              <Scale className="w-10 h-10 text-gray-300 mx-auto" />
+              <ShieldAlert className="w-10 h-10 text-gray-300 mx-auto" />
               <h3 className="font-black text-lg text-brand-dark">No Complaints Filed</h3>
               <p className="text-xs text-gray-600 font-bold">
                 Delivered orders can be contested with IPFS-pinned evidence if items are wrong or delayed.
@@ -408,10 +419,16 @@ export const CustomerDashboard = () => {
             {/* Body */}
             <div className="grid grid-cols-1 lg:grid-cols-3 flex-1 overflow-hidden">
               {/* Menu Catalog */}
-              <div className="lg:col-span-2 p-4 overflow-y-auto space-y-4 border-b-3 lg:border-b-0 lg:border-r-3 border-black">
-                <h4 className="text-xs font-black uppercase tracking-wider text-gray-600">
-                  Dishes from Zomato Catalog:
-                </h4>
+              <div
+                ref={menuListRef}
+                className="lg:col-span-2 p-5 overflow-y-auto space-y-3 border-b-3 lg:border-b-0 lg:border-r-3 border-black"
+              >
+                <div className="flex items-center justify-between pb-2 border-b-2 border-gray-100 mb-1">
+                  <span className="text-xs font-black uppercase tracking-wider text-brand-dark">
+                    Available Dishes ({menuItems.length})
+                  </span>
+                  <span className="text-[11px] font-bold text-gray-500">Prepared Fresh</span>
+                </div>
                 <div className="space-y-3">
                   {menuItems.map((item) => (
                     <div

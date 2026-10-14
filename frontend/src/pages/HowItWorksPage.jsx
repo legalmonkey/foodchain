@@ -18,7 +18,7 @@ export const HowItWorksPage = ({ onGetStarted }) => {
     {
       num: '01',
       title: 'Order Placement & Smart Anchoring',
-      desc: 'Browse verified Bangalore restaurants and menus from the authentic Kaggle Zomato dataset. When you place an order, items stay fast in MongoDB while an immutable cryptographic hash is anchored to the OrderRegistry contract via the backend relayer.',
+      desc: 'Browse verified Bangalore restaurants and authentic menus. When you place an order, items stay fast in MongoDB while an immutable cryptographic hash is anchored to the OrderRegistry contract via the backend relayer.',
       icon: ShoppingBag,
     },
     {
@@ -37,7 +37,7 @@ export const HowItWorksPage = ({ onGetStarted }) => {
       num: '04',
       title: 'Decentralized Jury Voting & Fair Settlement',
       desc: 'If the restaurant contests your complaint, a pool of 5 independent community jurors (who staked POL) is pseudo-randomly assigned. Jurors inspect your IPFS photos and cast votes. The majority verdict settles refunds, rewards honest jurors, and automatically adjusts on-chain reputation scores.',
-      icon: Scale,
+      icon: Award,
     },
   ];
 
