@@ -16,16 +16,17 @@ exports.createOrder = async (req, res) => {
     }
 
     let restaurant = null;
-    if (mongoose.connection.readyState === 1) {
+    if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(restaurantId)) {
       try {
-        restaurant = await Restaurant.findById(restaurantId);
+        restaurant = await Restaurant.findById(restaurantId).lean();
       } catch (e) {}
     }
     if (!restaurant) {
-      restaurant = inMemoryDb.restaurants.find((r) => r._id === restaurantId || r.name.toLowerCase().includes(restaurantId.toLowerCase()));
+      restaurant = inMemoryDb.restaurants.find(
+        (r) => String(r._id) === String(restaurantId) || r.name.toLowerCase().includes(String(restaurantId).toLowerCase())
+      );
     }
     if (!restaurant) {
-      // Fallback to first restaurant
       restaurant = inMemoryDb.restaurants[0];
     }
 
@@ -35,13 +36,15 @@ exports.createOrder = async (req, res) => {
 
     for (const item of items) {
       let dbItem = null;
-      if (mongoose.connection.readyState === 1) {
+      if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(item.menuItemId)) {
         try {
-          dbItem = await MenuItem.findById(item.menuItemId);
+          dbItem = await MenuItem.findById(item.menuItemId).lean();
         } catch (e) {}
       }
       if (!dbItem) {
-        dbItem = inMemoryDb.menuItems.find((m) => m._id === item.menuItemId || m.name === item.name);
+        dbItem = inMemoryDb.menuItems.find(
+          (m) => String(m._id) === String(item.menuItemId) || m.name === item.name
+        );
       }
       const itemPrice = dbItem ? dbItem.price : (item.price || 200);
       computedTotal += itemPrice * (item.qty || 1);
@@ -53,10 +56,19 @@ exports.createOrder = async (req, res) => {
       });
     }
 
+    const isMongoValid =
+      mongoose.connection.readyState === 1 &&
+      mongoose.Types.ObjectId.isValid(req.user._id) &&
+      mongoose.Types.ObjectId.isValid(restaurant._id);
+
+    const orderId = isMongoValid ? new mongoose.Types.ObjectId() : "ord_" + Date.now().toString(36);
+
     const newOrderData = {
-      _id: "ord_" + Date.now().toString(36),
+      _id: orderId,
       customerId: req.user._id,
+      customerWallet: (req.user.walletAddress || "").toLowerCase(),
       restaurantId: restaurant._id,
+      restaurantWallet: (restaurant.walletAddress || "").toLowerCase(),
       items: orderItems,
       totalPrice: computedTotal,
       deliveryAddress,
@@ -65,19 +77,19 @@ exports.createOrder = async (req, res) => {
       createdAt: new Date(),
     };
 
-    let order = null;
-    if (mongoose.connection.readyState === 1) {
+    let order = newOrderData;
+    if (isMongoValid) {
       try {
-        order = new Order(newOrderData);
-        await order.save();
+        const mongoDoc = new Order(newOrderData);
+        await mongoDoc.save();
+        order = mongoDoc.toObject();
       } catch (e) {
-        order = newOrderData;
-        inMemoryDb.orders.unshift(newOrderData);
+        console.warn("Mongo order save fallback to in-memory store:", e.message);
       }
-    } else {
-      order = newOrderData;
-      inMemoryDb.orders.unshift(newOrderData);
     }
+
+    // Ensure order is always in inMemoryDb for fast retrieval and auto-advance
+    inMemoryDb.orders.unshift(order);
 
     // Call on-chain order ref creation (backend relayer signs)
     try {
@@ -92,7 +104,6 @@ exports.createOrder = async (req, res) => {
         order.onChainOrderKey = onChainResult.orderKey;
         order.txHash = onChainResult.txHash;
       }
-      if (order.save) await order.save();
     } catch (chainErr) {
       console.warn("On-chain order anchor warning:", chainErr.message);
     }
@@ -122,21 +133,24 @@ exports.createOrder = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     let order = null;
-    if (mongoose.connection.readyState === 1) {
+    const reqOrderId = req.params.id;
+
+    if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(reqOrderId)) {
       try {
-        order = await Order.findById(req.params.id)
+        order = await Order.findById(reqOrderId)
           .populate("customerId", "name walletAddress phone")
           .populate("restaurantId", "name walletAddress address")
-          .populate("deliveryPartnerId", "name walletAddress phone");
+          .populate("deliveryPartnerId", "name walletAddress phone")
+          .lean();
       } catch (e) {}
     }
 
     if (!order) {
-      order = inMemoryDb.orders.find((o) => o._id === req.params.id);
+      order = inMemoryDb.orders.find((o) => String(o._id) === String(reqOrderId));
       if (order) {
-        const customer = inMemoryDb.users.find((u) => u._id === order.customerId);
-        const restaurant = inMemoryDb.restaurants.find((r) => r._id === order.restaurantId);
-        const delivery = inMemoryDb.users.find((u) => u._id === order.deliveryPartnerId);
+        const customer = inMemoryDb.users.find((u) => String(u._id) === String(order.customerId));
+        const restaurant = inMemoryDb.restaurants.find((r) => String(r._id) === String(order.restaurantId));
+        const delivery = inMemoryDb.users.find((u) => String(u._id) === String(order.deliveryPartnerId));
         order = {
           ...order,
           customerId: customer || { name: "Customer", walletAddress: "0x..." },
@@ -158,47 +172,87 @@ exports.getOrderById = async (req, res) => {
 
 exports.getMyOrders = async (req, res) => {
   try {
-    let orders = [];
+    let dbOrders = [];
+    const activeRestId = req.query.restaurantId;
+
     if (mongoose.connection.readyState === 1) {
       try {
         let query = {};
-        if (req.user.role === "customer") query = { customerId: req.user._id };
-        else if (req.user.role === "restaurant") {
-          const rest = await Restaurant.findOne({ walletAddress: req.user.walletAddress });
-          if (rest) query = { restaurantId: rest._id };
-        } else if (req.user.role === "delivery_partner") query = { deliveryPartnerId: req.user._id };
+        if (req.user.role === "customer") {
+          query = { customerId: req.user._id };
+        } else if (req.user.role === "restaurant") {
+          if (activeRestId && mongoose.Types.ObjectId.isValid(activeRestId)) {
+            query = { restaurantId: activeRestId };
+          } else if (activeRestId && !mongoose.Types.ObjectId.isValid(activeRestId)) {
+            query = null; // String ID like res_truffles_01 is in inMemoryDb
+          } else {
+            const rest = await Restaurant.findOne({
+              $or: [
+                { walletAddress: req.user.walletAddress.toLowerCase() },
+                ...(mongoose.Types.ObjectId.isValid(req.user._id) ? [{ ownerUserId: req.user._id }] : [])
+              ]
+            });
+            if (rest) query = { restaurantId: rest._id };
+          }
+        } else if (req.user.role === "delivery_partner") {
+          query = { deliveryPartnerId: req.user._id };
+        }
 
-        orders = await Order.find(query)
-          .sort({ createdAt: -1 })
-          .populate("customerId", "name walletAddress")
-          .populate("restaurantId", "name walletAddress address")
-          .populate("deliveryPartnerId", "name walletAddress phone");
+        if (query) {
+          dbOrders = await Order.find(query)
+            .sort({ createdAt: -1 })
+            .populate("customerId", "name walletAddress")
+            .populate("restaurantId", "name walletAddress address")
+            .populate("deliveryPartnerId", "name walletAddress phone")
+            .lean();
+        }
       } catch (e) {}
     }
 
-    if (!orders || orders.length === 0) {
-      let filtered = inMemoryDb.orders;
-      if (req.user.role === "customer") {
-        filtered = inMemoryDb.orders.filter((o) => o.customerId === req.user._id);
-      } else if (req.user.role === "restaurant") {
-        const rest = inMemoryDb.restaurants.find((r) => r.walletAddress.toLowerCase() === req.user.walletAddress.toLowerCase());
-        filtered = rest ? inMemoryDb.orders.filter((o) => o.restaurantId === rest._id) : [];
-      } else if (req.user.role === "delivery_partner") {
-        filtered = inMemoryDb.orders.filter((o) => o.deliveryPartnerId === req.user._id);
-      }
-
-      orders = filtered.map((o) => {
-        const customer = inMemoryDb.users.find((u) => u._id === o.customerId);
-        const restaurant = inMemoryDb.restaurants.find((r) => r._id === o.restaurantId);
-        const delivery = inMemoryDb.users.find((u) => u._id === o.deliveryPartnerId);
-        return {
-          ...o,
-          customerId: customer || { name: "Customer", walletAddress: "0x..." },
-          restaurantId: restaurant || { name: "Restaurant", walletAddress: "0x..." },
-          deliveryPartnerId: delivery || null,
-        };
-      });
+    // Merge DB orders and in-memory orders
+    const combinedOrdersMap = new Map();
+    for (const o of dbOrders) {
+      combinedOrdersMap.set(String(o._id), o);
     }
+
+    let inMemFiltered = inMemoryDb.orders;
+    if (req.user.role === "customer") {
+      inMemFiltered = inMemoryDb.orders.filter(
+        (o) =>
+          String(o.customerId) === String(req.user._id) ||
+          (o.customerWallet && o.customerWallet.toLowerCase() === req.user.walletAddress?.toLowerCase())
+      );
+    } else if (req.user.role === "restaurant") {
+      if (activeRestId && activeRestId !== "my-restaurant") {
+        inMemFiltered = inMemoryDb.orders.filter((o) => String(o.restaurantId) === String(activeRestId));
+      } else {
+        const userWallet = (req.user.walletAddress || "").toLowerCase();
+        const myRest = inMemoryDb.restaurants.find((r) => r.walletAddress?.toLowerCase() === userWallet);
+        inMemFiltered = myRest
+          ? inMemoryDb.orders.filter((o) => String(o.restaurantId) === String(myRest._id))
+          : inMemoryDb.orders;
+      }
+    } else if (req.user.role === "delivery_partner") {
+      inMemFiltered = inMemoryDb.orders.filter((o) => String(o.deliveryPartnerId) === String(req.user._id));
+    }
+
+    for (const o of inMemFiltered) {
+      if (!combinedOrdersMap.has(String(o._id))) {
+        const customer = inMemoryDb.users.find((u) => String(u._id) === String(o.customerId));
+        const restaurant = inMemoryDb.restaurants.find((r) => String(r._id) === String(o.restaurantId));
+        const delivery = inMemoryDb.users.find((u) => String(u._id) === String(o.deliveryPartnerId));
+        combinedOrdersMap.set(String(o._id), {
+          ...o,
+          customerId: customer || o.customerId || { name: req.user.name || "Customer", walletAddress: req.user.walletAddress },
+          restaurantId: restaurant || o.restaurantId || { name: "Restaurant", walletAddress: "0x..." },
+          deliveryPartnerId: delivery || null,
+        });
+      }
+    }
+
+    const orders = Array.from(combinedOrdersMap.values()).sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    );
 
     res.json(orders);
   } catch (err) {

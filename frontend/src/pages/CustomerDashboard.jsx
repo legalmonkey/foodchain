@@ -51,9 +51,23 @@ export const CustomerDashboard = () => {
 
   // Live Socket.io updates for orders and complaints
   useSocket({
+    orderCreated: (newOrder) => {
+      const myWallet = (user?.walletAddress || '').toLowerCase();
+      const myId = String(user?.id || '');
+      const orderCustId = String(newOrder.customerId?._id || newOrder.customerId || '');
+      const orderCustWallet = (newOrder.customerId?.walletAddress || newOrder.customerWallet || '').toLowerCase();
+
+      if (orderCustId === myId || (orderCustWallet && orderCustWallet === myWallet)) {
+        setOrders((prev) => [newOrder, ...prev.filter((o) => String(o._id) !== String(newOrder._id))]);
+      }
+    },
     orderStatusChanged: (data) => {
       setOrders((prev) =>
-        prev.map((o) => (o._id === data.orderId ? { ...o, status: data.status, ...data.order } : o))
+        prev.map((o) =>
+          String(o._id) === String(data.orderId)
+            ? { ...o, status: data.status, ...data.order }
+            : o
+        )
       );
     },
     complaintUpdated: () => {
@@ -166,7 +180,10 @@ export const CustomerDashboard = () => {
       setCart({});
       setSelectedRestaurant(null);
       setActiveTab('orders');
-      fetchOrders();
+      if (res.data) {
+        setOrders((prev) => [res.data, ...prev.filter((o) => String(o._id) !== String(res.data._id))]);
+      }
+      await fetchOrders();
     } catch (err) {
       alert(`Order placement failed: ${err.response?.data?.error || err.message}`);
     } finally {

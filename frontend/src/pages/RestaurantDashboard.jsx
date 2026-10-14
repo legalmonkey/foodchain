@@ -33,13 +33,19 @@ export const RestaurantDashboard = () => {
 
   useSocket({
     orderCreated: (newOrder) => {
-      if (newOrder.restaurantId?._id === restaurantProfile?._id) {
-        setOrders((prev) => [newOrder, ...prev]);
+      const activeRestId = String(restaurantProfile?._id || '');
+      const incomingRestId = String(newOrder.restaurantId?._id || newOrder.restaurantId || '');
+      if (incomingRestId === activeRestId) {
+        setOrders((prev) => [newOrder, ...prev.filter((o) => String(o._id) !== String(newOrder._id))]);
       }
     },
     orderStatusChanged: (data) => {
       setOrders((prev) =>
-        prev.map((o) => (o._id === data.orderId ? { ...o, status: data.status, ...data.order } : o))
+        prev.map((o) =>
+          String(o._id) === String(data.orderId)
+            ? { ...o, status: data.status, ...data.order }
+            : o
+        )
       );
     },
     complaintUpdated: () => {
@@ -96,7 +102,7 @@ export const RestaurantDashboard = () => {
 
         const restId = activeRest._id || 'my-restaurant';
         const [ordersRes, compRes, menuRes] = await Promise.all([
-          axios.get(`${API_URL}/api/orders/mine`).catch(() => ({ data: [] })),
+          axios.get(`${API_URL}/api/orders/mine?restaurantId=${restId}`).catch(() => ({ data: [] })),
           axios.get(`${API_URL}/api/complaints/mine`).catch(() => ({ data: [] })),
           axios.get(`${API_URL}/api/restaurants/${restId}`).catch(() => ({ data: { menuItems: [] } })),
         ]);

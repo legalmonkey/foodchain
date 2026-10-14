@@ -1,6 +1,8 @@
 const Order = require("../models/Order");
 const User = require("../models/User");
 const config = require("../config/env");
+const inMemoryDb = require("./inMemoryDb");
+const mongoose = require("mongoose");
 const { markOnChainDelivered, assignOnChainDelivery } = require("./blockchain");
 
 // Active timers mapped by orderId
@@ -67,7 +69,19 @@ function scheduleNextTransition(order, io) {
 async function advanceOrderStatus(orderId, targetStatus, io, triggeredBy = "MANUAL") {
   cancelOrderTimer(orderId);
 
-  const order = await Order.findById(orderId);
+  let order = null;
+  const isMongoId = mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(orderId);
+
+  if (isMongoId) {
+    try {
+      order = await Order.findById(orderId);
+    } catch (e) {}
+  }
+
+  if (!order) {
+    order = inMemoryDb.orders.find((o) => String(o._id) === String(orderId));
+  }
+
   if (!order) {
     throw new Error("Order not found");
   }
@@ -86,6 +100,9 @@ async function advanceOrderStatus(orderId, targetStatus, io, triggeredBy = "MANU
   }
 
   order.status = targetStatus;
+  if (!order.statusTimestamps) {
+    order.statusTimestamps = {};
+  }
   const now = new Date();
 
   if (targetStatus === "ACCEPTED") {
@@ -97,7 +114,15 @@ async function advanceOrderStatus(orderId, targetStatus, io, triggeredBy = "MANU
 
     // If no delivery partner assigned yet, auto-assign an active delivery partner
     if (!order.deliveryPartnerId) {
-      const deliveryPartner = await User.findOne({ role: "delivery_partner" });
+      let deliveryPartner = null;
+      if (mongoose.connection.readyState === 1) {
+        try {
+          deliveryPartner = await User.findOne({ role: "delivery_partner" });
+        } catch (e) {}
+      }
+      if (!deliveryPartner) {
+        deliveryPartner = inMemoryDb.users.find((u) => u.role === "delivery_partner");
+      }
       if (deliveryPartner) {
         order.deliveryPartnerId = deliveryPartner._id;
         if (order.onChainOrderKey) {
@@ -120,13 +145,37 @@ async function advanceOrderStatus(orderId, targetStatus, io, triggeredBy = "MANU
     order.statusTimestamps.closed = now;
   }
 
-  await order.save();
+  if (order.save) {
+    try {
+      await order.save();
+    } catch (e) {
+      console.warn("Order save warning in advanceOrderStatus:", e.message);
+    }
+  }
 
   // Populate references for clean frontend payload
-  const populatedOrder = await Order.findById(order._id)
-    .populate("customerId", "name walletAddress")
-    .populate("restaurantId", "name walletAddress address")
-    .populate("deliveryPartnerId", "name walletAddress phone");
+  let populatedOrder = null;
+  if (isMongoId) {
+    try {
+      populatedOrder = await Order.findById(order._id)
+        .populate("customerId", "name walletAddress")
+        .populate("restaurantId", "name walletAddress address")
+        .populate("deliveryPartnerId", "name walletAddress phone")
+        .lean();
+    } catch (e) {}
+  }
+
+  if (!populatedOrder) {
+    const customer = inMemoryDb.users.find((u) => String(u._id) === String(order.customerId));
+    const restaurant = inMemoryDb.restaurants.find((r) => String(r._id) === String(order.restaurantId));
+    const delivery = inMemoryDb.users.find((u) => String(u._id) === String(order.deliveryPartnerId));
+    populatedOrder = {
+      ...(order.toObject ? order.toObject() : order),
+      customerId: customer || order.customerId || { name: "Customer", walletAddress: "0x..." },
+      restaurantId: restaurant || order.restaurantId || { name: "Restaurant", walletAddress: "0x..." },
+      deliveryPartnerId: delivery || null,
+    };
+  }
 
   if (io) {
     io.emit("orderStatusChanged", {
