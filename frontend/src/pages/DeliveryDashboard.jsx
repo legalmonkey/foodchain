@@ -13,9 +13,25 @@ export const DeliveryDashboard = () => {
   const [complaints, setComplaints] = useState([]);
 
   useSocket({
+    orderCreated: (newOrder) => {
+      setOrders((prev) => [newOrder, ...prev.filter((o) => String(o._id) !== String(newOrder._id))]);
+    },
     orderStatusChanged: (data) => {
       setOrders((prev) =>
-        prev.map((o) => (o._id === data.orderId ? { ...o, status: data.status, ...data.order } : o))
+        prev.map((o) =>
+          String(o._id) === String(data.orderId)
+            ? { ...o, status: data.status, ...data.order }
+            : o
+        )
+      );
+    },
+    orderStatusUpdated: (data) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          String(o._id) === String(data.orderId)
+            ? { ...o, status: data.status, ...data.order }
+            : o
+        )
       );
     },
   });
@@ -30,8 +46,8 @@ export const DeliveryDashboard = () => {
         axios.get(`${API_URL}/api/orders/mine`),
         axios.get(`${API_URL}/api/complaints/mine`),
       ]);
-      setOrders(ordersRes.data);
-      setComplaints(compRes.data);
+      setOrders(ordersRes.data || []);
+      setComplaints(compRes.data || []);
     } catch (err) {
       console.error('Error fetching delivery partner data:', err);
     }
@@ -41,15 +57,15 @@ export const DeliveryDashboard = () => {
     try {
       await axios.patch(`${API_URL}/api/orders/${orderId}/status`, { status: targetStatus });
       setOrders((prev) =>
-        prev.map((o) => (o._id === orderId ? { ...o, status: targetStatus } : o))
+        prev.map((o) => (String(o._id) === String(orderId) ? { ...o, status: targetStatus } : o))
       );
     } catch (err) {
       alert(`Could not advance delivery status: ${err.response?.data?.error || err.message}`);
     }
   };
 
-  const activeDeliveries = orders.filter((o) => o.status === 'PREPARING' || o.status === 'OUT_FOR_DELIVERY');
-  const pastDeliveries = orders.filter((o) => o.status === 'DELIVERED' || o.status === 'CLOSED');
+  const activeDeliveries = orders.filter((o) => ['ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'].includes(o.status));
+  const pastDeliveries = orders.filter((o) => ['DELIVERED', 'CLOSED'].includes(o.status));
 
   return (
     <div className="space-y-6">

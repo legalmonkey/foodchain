@@ -27,7 +27,7 @@ exports.prepareComplaint = async (req, res) => {
     }
 
     let order = null;
-    if (mongoose.connection.readyState === 1) {
+    if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(orderId)) {
       try {
         order = await Order.findById(orderId)
           .populate("customerId", "walletAddress")
@@ -37,10 +37,10 @@ exports.prepareComplaint = async (req, res) => {
     }
 
     if (!order) {
-      order = inMemoryDb.orders.find((o) => o._id === orderId);
+      order = inMemoryDb.orders.find((o) => String(o._id) === String(orderId));
       if (order) {
-        const customer = inMemoryDb.users.find((u) => u._id === order.customerId);
-        const restaurant = inMemoryDb.restaurants.find((r) => r._id === order.restaurantId);
+        const customer = inMemoryDb.users.find((u) => String(u._id) === String(order.customerId));
+        const restaurant = inMemoryDb.restaurants.find((r) => String(r._id) === String(order.restaurantId));
         order = {
           ...order,
           customerId: customer || { walletAddress: req.user.walletAddress },
@@ -126,24 +126,34 @@ exports.syncComplaintAfterTx = async (req, res) => {
 
 exports.getMyComplaints = async (req, res) => {
   try {
-    const userWallet = req.user.walletAddress.toLowerCase();
-    let complaints = [];
+    const userWallet = (req.user.walletAddress || "").toLowerCase();
+    let dbComplaints = [];
 
     if (mongoose.connection.readyState === 1) {
       try {
         const query = {
           $or: [{ filerAddress: userWallet }, { respondentAddress: userWallet }],
         };
-        complaints = await ComplaintCache.find(query).sort({ filedAt: -1 }).populate("orderId");
+        dbComplaints = await ComplaintCache.find(query).sort({ filedAt: -1 }).lean();
       } catch (e) {}
     }
 
-    if (!complaints || complaints.length === 0) {
-      complaints = inMemoryDb.complaintCaches.filter(
-        (c) => c.filerAddress === userWallet || c.respondentAddress === userWallet
-      );
+    const combinedMap = new Map();
+    for (const c of dbComplaints) {
+      combinedMap.set(String(c.onChainComplaintId || c._id), c);
     }
 
+    const inMem = inMemoryDb.complaintCaches.filter(
+      (c) => c.filerAddress === userWallet || c.respondentAddress === userWallet
+    );
+    for (const c of inMem) {
+      const key = String(c.onChainComplaintId || c._id);
+      if (!combinedMap.has(key)) {
+        combinedMap.set(key, c);
+      }
+    }
+
+    const complaints = Array.from(combinedMap.values());
     res.json(complaints);
   } catch (err) {
     res.status(500).json({ error: err.message });

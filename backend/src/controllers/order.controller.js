@@ -233,7 +233,12 @@ exports.getMyOrders = async (req, res) => {
           : inMemoryDb.orders;
       }
     } else if (req.user.role === "delivery_partner") {
-      inMemFiltered = inMemoryDb.orders.filter((o) => String(o.deliveryPartnerId) === String(req.user._id));
+      inMemFiltered = inMemoryDb.orders.filter(
+        (o) =>
+          String(o.deliveryPartnerId) === String(req.user._id) ||
+          !o.deliveryPartnerId ||
+          ["ACCEPTED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED"].includes(o.status)
+      );
     }
 
     for (const o of inMemFiltered) {
@@ -264,13 +269,15 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
     let order = null;
-    if (mongoose.connection.readyState === 1) {
+    const reqOrderId = req.params.id;
+
+    if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(reqOrderId)) {
       try {
-        order = await Order.findById(req.params.id);
+        order = await Order.findById(reqOrderId);
       } catch (e) {}
     }
     if (!order) {
-      order = inMemoryDb.orders.find((o) => o._id === req.params.id);
+      order = inMemoryDb.orders.find((o) => String(o._id) === String(reqOrderId));
     }
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
@@ -279,10 +286,24 @@ exports.updateOrderStatus = async (req, res) => {
     order.status = status;
     if (!order.statusTimestamps) order.statusTimestamps = {};
     order.statusTimestamps[status.toLowerCase()] = new Date();
-    if (order.save) await order.save();
+
+    if (req.user?.role === "delivery_partner" && !order.deliveryPartnerId) {
+      order.deliveryPartnerId = req.user._id;
+      order.deliveryPartnerWallet = req.user.walletAddress;
+    }
+
+    if (order.save) {
+      try {
+        await order.save();
+      } catch (e) {}
+    }
 
     const io = getIO();
-    if (io) io.emit("orderStatusUpdated", { orderId: order._id, status });
+    const eventPayload = { orderId: order._id, status, order };
+    if (io) {
+      io.emit("orderStatusChanged", eventPayload);
+      io.emit("orderStatusUpdated", eventPayload);
+    }
 
     res.json({ message: `Order status advanced to ${status}`, order });
   } catch (err) {
