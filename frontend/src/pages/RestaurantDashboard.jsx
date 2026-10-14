@@ -63,17 +63,29 @@ export const RestaurantDashboard = () => {
         setMyOwnRestaurant(myRest);
       }
 
-      if (allRes.data && allRes.data.length > 0) {
-        setAllRestaurants(allRes.data);
+      const SEED_FALLBACKS = [
+        { _id: 'res_truffles_01', name: 'Truffles Gourmet Burgers', cuisine: ['American', 'Burgers'], address: 'St. Marks Road, Central District' },
+        { _id: 'res_meghana_02', name: 'Meghana Biryani House', cuisine: ['Biryani', 'Andhra'], address: 'Koramangala 5th Block, Tech Corridor' },
+        { _id: 'res_napoli_03', name: 'Pizza Napoli Trattoria', cuisine: ['Italian', 'Pizza'], address: 'Indiranagar 100ft Road' },
+        { _id: 'res_wok_04', name: 'Wok of Asia', cuisine: ['Pan-Asian', 'Chinese'], address: 'HSR Layout Sector 3' },
+        { _id: 'res_subah_05', name: 'Subah South Tiffins', cuisine: ['South Indian', 'Breakfast'], address: 'Malleshwaram 7th Cross' },
+      ];
+
+      const mergedList = [...(allRes.data || [])];
+      for (const fallback of SEED_FALLBACKS) {
+        if (!mergedList.some((r) => String(r._id) === String(fallback._id))) {
+          mergedList.push(fallback);
+        }
       }
+      setAllRestaurants(mergedList);
 
       // Determine active restaurant
       let activeRest = myRest;
-      if (targetRestId && allRes.data?.length > 0) {
-        const found = allRes.data.find((r) => r._id === targetRestId);
+      if (targetRestId) {
+        const found = mergedList.find((r) => String(r._id) === String(targetRestId));
         if (found) activeRest = found;
-      } else if (!activeRest && allRes.data?.length > 0) {
-        activeRest = allRes.data[0];
+      } else if (!activeRest && mergedList.length > 0) {
+        activeRest = mergedList[0];
       }
 
       if (activeRest) {
@@ -199,14 +211,14 @@ export const RestaurantDashboard = () => {
                   className="bg-white text-brand-dark font-black text-xs px-2.5 py-1 rounded border-2 border-black focus:outline-none cursor-pointer hover:bg-yellow-100 transition-colors"
                 >
                   {myOwnRestaurant && (
-                    <option value={myOwnRestaurant._id}>
+                    <option value={String(myOwnRestaurant._id)}>
                       ★ {myOwnRestaurant.name} (My Registered Kitchen)
                     </option>
                   )}
                   {allRestaurants
-                    .filter((r) => r._id !== myOwnRestaurant?._id)
+                    .filter((r) => String(r._id) !== String(myOwnRestaurant?._id))
                     .map((r) => (
-                      <option key={r._id} value={r._id}>
+                      <option key={String(r._id)} value={String(r._id)}>
                         {r.name}
                       </option>
                     ))}

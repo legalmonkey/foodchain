@@ -9,18 +9,24 @@ const config = require("../config/env");
 
 exports.getAllRestaurants = async (req, res) => {
   try {
-    let restaurants = [];
+    let dbRestaurants = [];
     if (mongoose.connection.readyState === 1) {
       try {
-        restaurants = await Restaurant.find().lean();
+        dbRestaurants = await Restaurant.find().lean();
       } catch (e) {
         // Fallback
       }
     }
 
-    if (!restaurants || restaurants.length === 0) {
-      restaurants = inMemoryDb.restaurants;
+    // Always merge database restaurants with seeded platform restaurants
+    const combinedMap = new Map();
+    for (const r of inMemoryDb.restaurants) {
+      combinedMap.set(String(r._id), r);
     }
+    for (const r of dbRestaurants) {
+      combinedMap.set(String(r._id), r);
+    }
+    const restaurants = Array.from(combinedMap.values());
 
     // Attach on-chain reputation and item count
     const enriched = await Promise.all(
