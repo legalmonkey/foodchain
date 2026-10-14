@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 
 export const useSocket = (eventHandlers = {}) => {
   const socketRef = useRef(null);
+  const handlersRef = useRef(eventHandlers);
+  handlersRef.current = eventHandlers;
   const { user } = useAuth();
 
   useEffect(() => {
@@ -23,11 +25,28 @@ export const useSocket = (eventHandlers = {}) => {
       }
     });
 
-    // Register dynamic event listeners
-    Object.entries(eventHandlers).forEach(([eventName, handler]) => {
-      if (typeof handler === 'function') {
-        socket.on(eventName, handler);
+    // Use onAny so ANY real-time backend event immediately calls the latest handler
+    socket.onAny((eventName, ...args) => {
+      if (typeof handlersRef.current?.[eventName] === 'function') {
+        handlersRef.current[eventName](...args);
       }
+    });
+
+    // Also explicitly bind common events to guarantee delivery across all transports
+    const standardEvents = [
+      'orderCreated',
+      'orderStatusChanged',
+      'orderStatusUpdated',
+      'complaintUpdated',
+      'newComplaint',
+    ];
+
+    standardEvents.forEach((eventName) => {
+      socket.on(eventName, (...args) => {
+        if (typeof handlersRef.current?.[eventName] === 'function') {
+          handlersRef.current[eventName](...args);
+        }
+      });
     });
 
     return () => {
@@ -37,3 +56,4 @@ export const useSocket = (eventHandlers = {}) => {
 
   return socketRef.current;
 };
+

@@ -181,7 +181,9 @@ exports.getMyOrders = async (req, res) => {
         if (req.user.role === "customer") {
           query = { customerId: req.user._id };
         } else if (req.user.role === "restaurant") {
-          if (activeRestId && mongoose.Types.ObjectId.isValid(activeRestId)) {
+          if (activeRestId === "ALL") {
+            query = {}; // All orders across all kitchens
+          } else if (activeRestId && mongoose.Types.ObjectId.isValid(activeRestId)) {
             query = { restaurantId: activeRestId };
           } else if (activeRestId && !mongoose.Types.ObjectId.isValid(activeRestId)) {
             query = null; // String ID like res_truffles_01 is in inMemoryDb
@@ -223,13 +225,27 @@ exports.getMyOrders = async (req, res) => {
           (o.customerWallet && o.customerWallet.toLowerCase() === req.user.walletAddress?.toLowerCase())
       );
     } else if (req.user.role === "restaurant") {
-      if (activeRestId && activeRestId !== "my-restaurant") {
-        inMemFiltered = inMemoryDb.orders.filter((o) => String(o.restaurantId) === String(activeRestId));
+      if (activeRestId === "ALL") {
+        inMemFiltered = inMemoryDb.orders;
+      } else if (activeRestId && activeRestId !== "my-restaurant") {
+        inMemFiltered = inMemoryDb.orders.filter((o) => {
+          const oRestId = String(o.restaurantId?._id || o.restaurantId || "");
+          const oRestWallet = (o.restaurantWallet || o.restaurantId?.walletAddress || "").toLowerCase();
+          return (
+            oRestId === String(activeRestId) ||
+            (activeRestId.startsWith("0x") && oRestWallet === activeRestId.toLowerCase())
+          );
+        });
       } else {
         const userWallet = (req.user.walletAddress || "").toLowerCase();
-        const myRest = inMemoryDb.restaurants.find((r) => r.walletAddress?.toLowerCase() === userWallet);
+        const myRest = inMemoryDb.restaurants.find(
+          (r) => (r.walletAddress || "").toLowerCase() === userWallet
+        );
         inMemFiltered = myRest
-          ? inMemoryDb.orders.filter((o) => String(o.restaurantId) === String(myRest._id))
+          ? inMemoryDb.orders.filter((o) => {
+              const oRestId = String(o.restaurantId?._id || o.restaurantId || "");
+              return oRestId === String(myRest._id);
+            })
           : inMemoryDb.orders;
       }
     } else if (req.user.role === "delivery_partner") {
@@ -243,9 +259,9 @@ exports.getMyOrders = async (req, res) => {
 
     for (const o of inMemFiltered) {
       if (!combinedOrdersMap.has(String(o._id))) {
-        const customer = inMemoryDb.users.find((u) => String(u._id) === String(o.customerId));
-        const restaurant = inMemoryDb.restaurants.find((r) => String(r._id) === String(o.restaurantId));
-        const delivery = inMemoryDb.users.find((u) => String(u._id) === String(o.deliveryPartnerId));
+        const customer = inMemoryDb.users.find((u) => String(u._id) === String(o.customerId?._id || o.customerId));
+        const restaurant = inMemoryDb.restaurants.find((r) => String(r._id) === String(o.restaurantId?._id || o.restaurantId));
+        const delivery = inMemoryDb.users.find((u) => String(u._id) === String(o.deliveryPartnerId?._id || o.deliveryPartnerId));
         combinedOrdersMap.set(String(o._id), {
           ...o,
           customerId: customer || o.customerId || { name: req.user.name || "Customer", walletAddress: req.user.walletAddress },

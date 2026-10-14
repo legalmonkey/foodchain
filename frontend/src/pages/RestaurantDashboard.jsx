@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
@@ -7,7 +7,7 @@ import { useContract } from '../hooks/useContract';
 import { useSocket } from '../hooks/useSocket';
 import { OrderCard } from '../components/OrderCard';
 import { ComplaintCard } from '../components/ComplaintCard';
-import { Award, Plus, ChefHat, AlertOctagon, CheckCircle2, X, Utensils, Scale, ClipboardList, Trash2 } from 'lucide-react';
+import { Award, Plus, ChefHat, AlertOctagon, CheckCircle2, X, Utensils, Scale, ClipboardList, Trash2, RefreshCw } from 'lucide-react';
 
 export const RestaurantDashboard = () => {
   const { user } = useAuth();
@@ -19,9 +19,13 @@ export const RestaurantDashboard = () => {
   const [complaints, setComplaints] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [restaurantProfile, setRestaurantProfile] = useState(null);
+  const restaurantProfileRef = useRef(restaurantProfile);
+  restaurantProfileRef.current = restaurantProfile;
+
   const [allRestaurants, setAllRestaurants] = useState([]);
   const [myOwnRestaurant, setMyOwnRestaurant] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [pendingKitchenAlert, setPendingKitchenAlert] = useState(null);
 
   // New menu item modal
   const [showAddMenuModal, setShowAddMenuModal] = useState(false);
@@ -33,17 +37,49 @@ export const RestaurantDashboard = () => {
 
   useSocket({
     orderCreated: (newOrder) => {
-      const activeRestId = String(restaurantProfile?._id || '');
+      console.log('Kitchen real-time order received:', newOrder);
+      const activeRest = restaurantProfileRef.current;
+      const activeRestId = String(activeRest?._id || '');
       const incomingRestId = String(newOrder.restaurantId?._id || newOrder.restaurantId || '');
-      if (incomingRestId === activeRestId) {
+      const incomingRestName =
+        newOrder.restaurantId?.name || newOrder.restaurantName || 'Another Kitchen';
+
+      const activeWallet = (activeRest?.walletAddress || '').toLowerCase();
+      const incomingWallet = (
+        newOrder.restaurantWallet ||
+        newOrder.restaurantId?.walletAddress ||
+        ''
+      ).toLowerCase();
+
+      const isMatch =
+        activeRestId === 'ALL' ||
+        !activeRestId ||
+        incomingRestId === activeRestId ||
+        (activeWallet && incomingWallet && activeWallet === incomingWallet);
+
+      if (isMatch) {
         setOrders((prev) => [newOrder, ...prev.filter((o) => String(o._id) !== String(newOrder._id))]);
+      } else {
+        setPendingKitchenAlert({
+          restaurantName: incomingRestName,
+          restaurantId: incomingRestId,
+        });
       }
     },
     orderStatusChanged: (data) => {
       setOrders((prev) =>
         prev.map((o) =>
           String(o._id) === String(data.orderId)
-            ? { ...o, status: data.status, ...data.order }
+            ? { ...o, status: data.status, ...(data.order || {}) }
+            : o
+        )
+      );
+    },
+    orderStatusUpdated: (data) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          String(o._id) === String(data.orderId)
+            ? { ...o, status: data.status, ...(data.order || {}) }
             : o
         )
       );
@@ -87,7 +123,15 @@ export const RestaurantDashboard = () => {
 
       // Determine active restaurant
       let activeRest = myRest;
-      if (targetRestId) {
+      if (targetRestId === 'ALL') {
+        activeRest = {
+          _id: 'ALL',
+          name: 'All Kitchens (Master View)',
+          cuisine: ['All Cuisines', 'Live Kitchen Feed'],
+          address: 'Consolidated Kitchen Queue Across All Branches',
+          reputationScore: 92,
+        };
+      } else if (targetRestId) {
         const found = mergedList.find((r) => String(r._id) === String(targetRestId));
         if (found) activeRest = found;
       } else if (!activeRest && mergedList.length > 0) {
@@ -101,10 +145,11 @@ export const RestaurantDashboard = () => {
         });
 
         const restId = activeRest._id || 'my-restaurant';
+        const menuFetchId = restId === 'ALL' ? (mergedList[0]?._id || 'res_truffles_01') : restId;
         const [ordersRes, compRes, menuRes] = await Promise.all([
           axios.get(`${API_URL}/api/orders/mine?restaurantId=${restId}`).catch(() => ({ data: [] })),
           axios.get(`${API_URL}/api/complaints/mine`).catch(() => ({ data: [] })),
-          axios.get(`${API_URL}/api/restaurants/${restId}`).catch(() => ({ data: { menuItems: [] } })),
+          axios.get(`${API_URL}/api/restaurants/${menuFetchId}`).catch(() => ({ data: { menuItems: [] } })),
         ]);
         setOrders(ordersRes.data || []);
         setComplaints(compRes.data || []);
@@ -231,6 +276,7 @@ export const RestaurantDashboard = () => {
                   onChange={(e) => handleSwitchRestaurant(e.target.value)}
                   className="bg-white text-brand-dark font-black text-xs px-2.5 py-1 rounded border-2 border-black focus:outline-none cursor-pointer hover:bg-yellow-100 transition-colors"
                 >
+                  <option value="ALL">⚡ ALL KITCHENS (Master View)</option>
                   {myOwnRestaurant && (
                     <option value={String(myOwnRestaurant._id)}>
                       ★ {myOwnRestaurant.name} (My Registered Kitchen)
@@ -266,6 +312,36 @@ export const RestaurantDashboard = () => {
         </div>
       </div>
 
+      {/* Cross-kitchen incoming order alert banner */}
+      {pendingKitchenAlert && (
+        <div className="bg-brand-yellow border-3 border-black p-3.5 shadow-neo flex flex-wrap items-center justify-between gap-3 animate-pulse">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🔔</span>
+            <span className="font-black text-sm">
+              New customer order received for <u>{pendingKitchenAlert.restaurantName}</u>!
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                handleSwitchRestaurant(pendingKitchenAlert.restaurantId);
+                setPendingKitchenAlert(null);
+              }}
+              className="neo-btn bg-black text-white hover:bg-gray-800 text-xs px-3 py-1 font-black shadow-neo-sm"
+            >
+              Switch Kitchen & View
+            </button>
+            <button
+              onClick={() => setPendingKitchenAlert(null)}
+              className="p-1 hover:bg-black/10 rounded"
+              title="Dismiss"
+            >
+              <X className="w-4 h-4 text-black" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex border-b-4 border-black gap-2">
         {[
@@ -296,7 +372,17 @@ export const RestaurantDashboard = () => {
         <div className="space-y-4">
           <div className="border-b-2 border-black pb-2 flex justify-between items-center">
             <h2 className="text-xl font-black uppercase">Incoming & Active Orders</h2>
-            <span className="text-xs font-bold text-gray-600">Advance states with 1 click</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => fetchProfileAndData(restaurantProfile?._id)}
+                className="flex items-center gap-1 text-xs font-black border-2 border-black px-2.5 py-1 bg-white hover:bg-brand-yellow transition-colors shadow-neo-sm"
+                title="Manually sync kitchen feed"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Sync Feed</span>
+              </button>
+              <span className="text-xs font-bold text-gray-600 hidden sm:inline">Advance states with 1 click</span>
+            </div>
           </div>
 
           {orders.length === 0 ? (
