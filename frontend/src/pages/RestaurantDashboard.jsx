@@ -19,6 +19,8 @@ export const RestaurantDashboard = () => {
   const [complaints, setComplaints] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [restaurantProfile, setRestaurantProfile] = useState(null);
+  const [allRestaurants, setAllRestaurants] = useState([]);
+  const [myOwnRestaurant, setMyOwnRestaurant] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   // New menu item modal
@@ -49,21 +51,42 @@ export const RestaurantDashboard = () => {
     fetchProfileAndData();
   }, []);
 
-  const fetchProfileAndData = async () => {
+  const fetchProfileAndData = async (targetRestId = null) => {
     try {
-      const meRes = await axios.get(`${API_URL}/api/auth/me`);
-      const rest = meRes.data.restaurant;
-      if (rest) {
+      const [meRes, allRes] = await Promise.all([
+        axios.get(`${API_URL}/api/auth/me`),
+        axios.get(`${API_URL}/api/restaurants`).catch(() => ({ data: [] })),
+      ]);
+
+      const myRest = meRes.data.restaurant;
+      if (myRest) {
+        setMyOwnRestaurant(myRest);
+      }
+
+      if (allRes.data && allRes.data.length > 0) {
+        setAllRestaurants(allRes.data);
+      }
+
+      // Determine active restaurant
+      let activeRest = myRest;
+      if (targetRestId && allRes.data?.length > 0) {
+        const found = allRes.data.find((r) => r._id === targetRestId);
+        if (found) activeRest = found;
+      } else if (!activeRest && allRes.data?.length > 0) {
+        activeRest = allRes.data[0];
+      }
+
+      if (activeRest) {
         setRestaurantProfile({
-          ...rest,
-          reputationScore: meRes.data.reputationScore,
+          ...activeRest,
+          reputationScore: activeRest.reputationScore || meRes.data.reputationScore || 70,
         });
 
-        const restId = rest._id || 'my-restaurant';
+        const restId = activeRest._id || 'my-restaurant';
         const [ordersRes, compRes, menuRes] = await Promise.all([
-          axios.get(`${API_URL}/api/orders/mine`),
-          axios.get(`${API_URL}/api/complaints/mine`),
-          axios.get(`${API_URL}/api/restaurants/${restId}`),
+          axios.get(`${API_URL}/api/orders/mine`).catch(() => ({ data: [] })),
+          axios.get(`${API_URL}/api/complaints/mine`).catch(() => ({ data: [] })),
+          axios.get(`${API_URL}/api/restaurants/${restId}`).catch(() => ({ data: { menuItems: [] } })),
         ]);
         setOrders(ordersRes.data || []);
         setComplaints(compRes.data || []);
@@ -72,6 +95,10 @@ export const RestaurantDashboard = () => {
     } catch (err) {
       console.error('Error fetching restaurant data:', err);
     }
+  };
+
+  const handleSwitchRestaurant = async (targetId) => {
+    await fetchProfileAndData(targetId);
   };
 
   const fetchComplaints = async () => {
@@ -149,8 +176,8 @@ export const RestaurantDashboard = () => {
       setNewItemName('');
       setNewItemPrice('');
       setNewItemDesc('');
-      await fetchProfileAndData();
-      alert(`✓ "${addedDish}" added successfully to your menu!`);
+      await fetchProfileAndData(restaurantProfile?._id);
+      alert(`✓ "${addedDish}" added successfully to ${restaurantProfile?.name || 'the menu'}!`);
     } catch (err) {
       alert(`Failed to add dish: ${err.response?.data?.error || err.message}`);
     }
@@ -161,7 +188,32 @@ export const RestaurantDashboard = () => {
       {/* Restaurant Header */}
       <div className="neo-card p-6 bg-brand-red text-white flex flex-wrap justify-between items-center gap-4">
         <div>
-          <span className="neo-badge bg-white text-black mb-2">Kitchen Dashboard</span>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="neo-badge bg-white text-black">Kitchen Dashboard</span>
+            {allRestaurants.length > 0 && (
+              <div className="flex items-center gap-1.5 bg-black/40 border-2 border-white/40 px-2.5 py-1 rounded-md text-xs font-bold shadow-sm">
+                <span className="text-white/80">Active Kitchen:</span>
+                <select
+                  value={restaurantProfile?._id || ''}
+                  onChange={(e) => handleSwitchRestaurant(e.target.value)}
+                  className="bg-white text-brand-dark font-black text-xs px-2.5 py-1 rounded border-2 border-black focus:outline-none cursor-pointer hover:bg-yellow-100 transition-colors"
+                >
+                  {myOwnRestaurant && (
+                    <option value={myOwnRestaurant._id}>
+                      ★ {myOwnRestaurant.name} (My Registered Kitchen)
+                    </option>
+                  )}
+                  {allRestaurants
+                    .filter((r) => r._id !== myOwnRestaurant?._id)
+                    .map((r) => (
+                      <option key={r._id} value={r._id}>
+                        {r.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+          </div>
           <h1 className="text-3xl font-black uppercase">
             {restaurantProfile?.name || 'Restaurant Kitchen'}
           </h1>

@@ -104,22 +104,24 @@ export const CustomerDashboard = () => {
     if (menuListRef.current) {
       menuListRef.current.scrollTop = 0;
     }
-    if (restaurant.menu && restaurant.menu.length > 0) {
-      setMenuItems(restaurant.menu);
-      setTimeout(() => {
-        if (menuListRef.current) menuListRef.current.scrollTop = 0;
-      }, 50);
-      return;
-    }
     try {
       const res = await axios.get(`${API_URL}/api/restaurants/${restaurant._id}`);
-      setMenuItems(res.data.menuItems || []);
-      setTimeout(() => {
-        if (menuListRef.current) menuListRef.current.scrollTop = 0;
-      }, 50);
+      if (res.data?.menuItems && res.data.menuItems.length > 0) {
+        setMenuItems(res.data.menuItems);
+      } else if (restaurant.menu && restaurant.menu.length > 0) {
+        setMenuItems(restaurant.menu);
+      } else {
+        setMenuItems([]);
+      }
     } catch (err) {
-      console.error('Error fetching menu:', err);
+      console.warn('Error fetching live menu from API, falling back:', err);
+      if (restaurant.menu && restaurant.menu.length > 0) {
+        setMenuItems(restaurant.menu);
+      }
     }
+    setTimeout(() => {
+      if (menuListRef.current) menuListRef.current.scrollTop = 0;
+    }, 50);
   };
 
   const addToCart = (item) => {
