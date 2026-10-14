@@ -90,6 +90,7 @@ exports.createOrder = async (req, res) => {
         order.onChainOrderKey = onChainResult;
       } else if (onChainResult?.orderKey) {
         order.onChainOrderKey = onChainResult.orderKey;
+        order.txHash = onChainResult.txHash;
       }
       if (order.save) await order.save();
     } catch (chainErr) {

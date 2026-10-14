@@ -68,6 +68,10 @@ const orderSchema = new mongoose.Schema({
     default: null,
     index: true,
   },
+  txHash: {
+    type: String,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
