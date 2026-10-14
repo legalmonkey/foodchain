@@ -8,8 +8,7 @@ const complaintCacheSchema = new mongoose.Schema({
     index: true,
   },
   orderId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Order",
+    type: mongoose.Schema.Types.Mixed,
     required: true,
     index: true,
   },

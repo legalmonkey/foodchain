@@ -112,11 +112,20 @@ exports.syncComplaintAfterTx = async (req, res) => {
           { onChainComplaintId: Number(onChainComplaintId) },
           complaintData,
           { upsert: true, new: true }
+        ).lean();
+        inMemoryDb.complaintCaches = inMemoryDb.complaintCaches.filter(
+          (c) => Number(c.onChainComplaintId) !== Number(onChainComplaintId)
         );
-        return res.status(201).json(updated);
-      } catch (e) {}
+        inMemoryDb.complaintCaches.unshift(updated || complaintData);
+        return res.status(201).json(updated || complaintData);
+      } catch (e) {
+        console.warn("Complaint Mongo save fallback:", e.message);
+      }
     }
 
+    inMemoryDb.complaintCaches = inMemoryDb.complaintCaches.filter(
+      (c) => Number(c.onChainComplaintId) !== Number(onChainComplaintId)
+    );
     inMemoryDb.complaintCaches.unshift(complaintData);
     res.status(201).json(complaintData);
   } catch (err) {
