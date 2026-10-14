@@ -53,20 +53,21 @@ export const RestaurantDashboard = () => {
     try {
       const meRes = await axios.get(`${API_URL}/api/auth/me`);
       const rest = meRes.data.restaurant;
-      setRestaurantProfile({
-        ...rest,
-        reputationScore: meRes.data.reputationScore,
-      });
-
       if (rest) {
+        setRestaurantProfile({
+          ...rest,
+          reputationScore: meRes.data.reputationScore,
+        });
+
+        const restId = rest._id || 'my-restaurant';
         const [ordersRes, compRes, menuRes] = await Promise.all([
           axios.get(`${API_URL}/api/orders/mine`),
           axios.get(`${API_URL}/api/complaints/mine`),
-          axios.get(`${API_URL}/api/restaurants/${rest._id}`),
+          axios.get(`${API_URL}/api/restaurants/${restId}`),
         ]);
-        setOrders(ordersRes.data);
-        setComplaints(compRes.data);
-        setMenuItems(menuRes.data.menuItems || []);
+        setOrders(ordersRes.data || []);
+        setComplaints(compRes.data || []);
+        setMenuItems(menuRes.data?.menuItems || []);
       }
     } catch (err) {
       console.error('Error fetching restaurant data:', err);
@@ -135,7 +136,8 @@ export const RestaurantDashboard = () => {
   const handleAddMenuItem = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/api/restaurants/${restaurantProfile._id}/menu`, {
+      const restId = restaurantProfile?._id || 'my-restaurant';
+      await axios.post(`${API_URL}/api/restaurants/${restId}/menu`, {
         name: newItemName,
         price: Number(newItemPrice),
         category: newItemCategory,
@@ -143,10 +145,12 @@ export const RestaurantDashboard = () => {
         isVeg: newItemVeg,
       });
       setShowAddMenuModal(false);
+      const addedDish = newItemName;
       setNewItemName('');
       setNewItemPrice('');
       setNewItemDesc('');
-      fetchProfileAndData();
+      await fetchProfileAndData();
+      alert(`✓ "${addedDish}" added successfully to your menu!`);
     } catch (err) {
       alert(`Failed to add dish: ${err.response?.data?.error || err.message}`);
     }

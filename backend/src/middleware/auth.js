@@ -17,9 +17,16 @@ const verifyToken = async (req, res, next) => {
     let user = null;
     if (mongoose.connection.readyState === 1) {
       try {
-        user = await User.findById(decoded.id).select("-passwordHash");
+        if (mongoose.Types.ObjectId.isValid(decoded.id)) {
+          user = await User.findById(decoded.id).select("-passwordHash").lean();
+        }
       } catch (e) {
         // Fallback
+      }
+      if (!user && decoded.walletAddress) {
+        try {
+          user = await User.findOne({ walletAddress: decoded.walletAddress.toLowerCase() }).select("-passwordHash").lean();
+        } catch (e) {}
       }
     }
 

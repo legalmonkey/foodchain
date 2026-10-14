@@ -7,6 +7,46 @@ const inMemoryDb = require("../services/inMemoryDb");
 const { getOnChainReputation } = require("../services/blockchain");
 const mongoose = require("mongoose");
 
+const autoProvisionRestaurant = async (user, restaurantName, cuisine, address) => {
+  const normWallet = (user.walletAddress || "").toLowerCase();
+  const restData = {
+    name: restaurantName || `${user.name || "Chef"}'s Kitchen`,
+    cuisine: Array.isArray(cuisine) && cuisine.length > 0 ? cuisine : ["Fast Food", "Indian"],
+    address: address || "123 Main Food Street",
+    imageUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop",
+    isOpen: true,
+    reputationScore: 70,
+    walletAddress: normWallet,
+  };
+
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const ownerId = (user._id && mongoose.Types.ObjectId.isValid(user._id))
+        ? user._id
+        : new mongoose.Types.ObjectId();
+      const newRest = new Restaurant({
+        ...restData,
+        ownerUserId: ownerId,
+      });
+      await newRest.save();
+      return newRest.toObject();
+    } catch (e) {
+      console.warn("MongoDB auto-provision restaurant error, fallback to in-memory:", e.message);
+    }
+  }
+
+  // in-memory fallback
+  const inMemRest = {
+    _id: "res_" + Date.now().toString(36),
+    ownerUserId: user._id ? user._id.toString() : "usr_" + Date.now().toString(36),
+    ...restData,
+  };
+  inMemoryDb.restaurants.push(inMemRest);
+  return inMemRest;
+};
+
+exports.autoProvisionRestaurant = autoProvisionRestaurant;
+
 exports.register = async (req, res) => {
   try {
     const { role, name, phone, walletAddress, password, restaurantName, cuisine, address } = req.body;
@@ -35,8 +75,11 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    const isMongo = mongoose.connection.readyState === 1;
+    const userId = isMongo ? new mongoose.Types.ObjectId() : "usr_" + Date.now().toString(36);
+
     const newUserData = {
-      _id: "usr_" + Date.now().toString(36),
+      _id: userId,
       walletAddress: normalizedWallet,
       role,
       name,
@@ -46,43 +89,51 @@ exports.register = async (req, res) => {
       jurorStake: "0",
     };
 
-    if (mongoose.connection.readyState === 1) {
+    let createdRestaurant = null;
+    if (role === "restaurant") {
+      createdRestaurant = {
+        _id: isMongo ? new mongoose.Types.ObjectId() : "res_" + Date.now().toString(36),
+        ownerUserId: userId,
+        walletAddress: normalizedWallet,
+        name: restaurantName || `${name}'s Kitchen`,
+        cuisine: Array.isArray(cuisine) && cuisine.length > 0 ? cuisine : ["Fast Food", "Indian"],
+        address: address || "123 Main Food Street",
+        imageUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop",
+        isOpen: true,
+        reputationScore: 70,
+      };
+    }
+
+    if (isMongo) {
       try {
         const user = new User(newUserData);
         await user.save();
-        if (role === "restaurant") {
-          const restaurant = new Restaurant({
-            ownerUserId: user._id,
-            walletAddress: normalizedWallet,
-            name: restaurantName || `${name}'s Kitchen`,
-            cuisine: cuisine || ["Fast Food", "Indian"],
-            address: address || "123 Main Food Street",
-            reputationScore: 70,
-          });
+        if (createdRestaurant) {
+          const restaurant = new Restaurant(createdRestaurant);
           await restaurant.save();
         }
       } catch (e) {
-        inMemoryDb.users.push(newUserData);
+        console.error("MongoDB register error, saving to inMemoryDb:", e.message);
+        const fallbackUserId = typeof newUserData._id === "object" ? newUserData._id.toString() : newUserData._id;
+        inMemoryDb.users.push({ ...newUserData, _id: fallbackUserId });
+        if (createdRestaurant) {
+          const fallbackRestId = typeof createdRestaurant._id === "object" ? createdRestaurant._id.toString() : createdRestaurant._id;
+          inMemoryDb.restaurants.push({
+            ...createdRestaurant,
+            _id: fallbackRestId,
+            ownerUserId: fallbackUserId,
+          });
+        }
       }
     } else {
       inMemoryDb.users.push(newUserData);
-      if (role === "restaurant") {
-        inMemoryDb.restaurants.push({
-          _id: "res_" + Date.now().toString(36),
-          ownerUserId: newUserData._id,
-          walletAddress: normalizedWallet,
-          name: restaurantName || `${name}'s Kitchen`,
-          cuisine: cuisine || ["Fast Food", "Indian"],
-          address: address || "123 Main Food Street",
-          imageUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop",
-          isOpen: true,
-          reputationScore: 70,
-        });
+      if (createdRestaurant) {
+        inMemoryDb.restaurants.push(createdRestaurant);
       }
     }
 
     const token = jwt.sign(
-      { id: newUserData._id, role: newUserData.role, walletAddress: normalizedWallet },
+      { id: newUserData._id.toString(), role: newUserData.role, walletAddress: normalizedWallet },
       config.jwtSecret,
       { expiresIn: "7d" }
     );
@@ -91,7 +142,7 @@ exports.register = async (req, res) => {
       message: "Registration successful",
       token,
       user: {
-        id: newUserData._id,
+        id: newUserData._id.toString(),
         name: newUserData.name,
         role: newUserData.role,
         walletAddress: newUserData.walletAddress,
@@ -134,7 +185,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role, walletAddress: normalizedWallet },
+      { id: user._id.toString(), role: user.role, walletAddress: normalizedWallet },
       config.jwtSecret,
       { expiresIn: "7d" }
     );
@@ -143,11 +194,22 @@ exports.login = async (req, res) => {
     if (user.role === "restaurant") {
       if (mongoose.connection.readyState === 1) {
         try {
-          restaurantProfile = await Restaurant.findOne({ walletAddress: normalizedWallet });
+          restaurantProfile = await Restaurant.findOne({
+            $or: [
+              { walletAddress: normalizedWallet },
+              ...(mongoose.Types.ObjectId.isValid(user._id) ? [{ ownerUserId: user._id }] : []),
+            ],
+          }).lean();
         } catch (e) {}
       }
       if (!restaurantProfile) {
-        restaurantProfile = inMemoryDb.restaurants.find((r) => r.walletAddress.toLowerCase() === normalizedWallet);
+        restaurantProfile = inMemoryDb.restaurants.find(
+          (r) => (r.walletAddress && r.walletAddress.toLowerCase() === normalizedWallet) ||
+                 (r.ownerUserId && r.ownerUserId.toString() === user._id.toString())
+        );
+      }
+      if (!restaurantProfile) {
+        restaurantProfile = await autoProvisionRestaurant(user);
       }
     }
 
@@ -160,7 +222,7 @@ exports.login = async (req, res) => {
       message: "Login successful",
       token,
       user: {
-        id: user._id,
+        id: user._id.toString(),
         name: user.name,
         role: user.role,
         walletAddress: user.walletAddress,
@@ -181,13 +243,25 @@ exports.getMe = async (req, res) => {
     let restaurant = null;
 
     if (user.role === "restaurant") {
+      const normWallet = (user.walletAddress || "").toLowerCase();
       if (mongoose.connection.readyState === 1) {
         try {
-          restaurant = await Restaurant.findOne({ walletAddress: user.walletAddress });
+          restaurant = await Restaurant.findOne({
+            $or: [
+              { walletAddress: normWallet },
+              ...(mongoose.Types.ObjectId.isValid(user._id) ? [{ ownerUserId: user._id }] : []),
+            ],
+          }).lean();
         } catch (e) {}
       }
       if (!restaurant) {
-        restaurant = inMemoryDb.restaurants.find((r) => r.walletAddress.toLowerCase() === user.walletAddress.toLowerCase());
+        restaurant = inMemoryDb.restaurants.find(
+          (r) => (r.walletAddress && r.walletAddress.toLowerCase() === normWallet) ||
+                 (r.ownerUserId && r.ownerUserId.toString() === user._id.toString())
+        );
+      }
+      if (!restaurant) {
+        restaurant = await autoProvisionRestaurant(user);
       }
     }
 
