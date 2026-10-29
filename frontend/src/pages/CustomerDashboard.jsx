@@ -8,6 +8,7 @@ import { useSocket } from '../hooks/useSocket';
 import { OrderCard } from '../components/OrderCard';
 import { ComplaintCard } from '../components/ComplaintCard';
 import { EvidenceUploader } from '../components/EvidenceUploader';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import {
   Search,
   ShoppingBag,
@@ -413,32 +414,35 @@ export const CustomerDashboard = () => {
 
       {/* TAB 3: GRIEVANCES & COMPLAINTS */}
       {activeTab === 'complaints' && (
-        <div className="space-y-4">
-          <div className="border-b-2 border-black pb-2 flex justify-between items-center">
-            <h2 className="text-xl font-black uppercase">Filed Grievances & Disputes</h2>
-            <span className="text-xs font-bold text-gray-600">Anchored on Polygon Amoy</span>
-          </div>
+        <ErrorBoundary fallbackTitle="Grievances View Encountered an Issue" onReset={fetchComplaints}>
+          <div className="space-y-4">
+            <div className="border-b-2 border-black pb-2 flex justify-between items-center">
+              <h2 className="text-xl font-black uppercase">Filed Grievances & Disputes</h2>
+              <span className="text-xs font-bold text-gray-600">Anchored on Polygon Amoy</span>
+            </div>
 
-          {complaints.length === 0 ? (
-            <div className="neo-card p-8 text-center space-y-2 bg-white">
-              <ShieldAlert className="w-10 h-10 text-gray-300 mx-auto" />
-              <h3 className="font-black text-lg text-brand-dark">No Complaints Filed</h3>
-              <p className="text-xs text-gray-600 font-bold">
-                Delivered orders can be contested with IPFS-pinned evidence if items are wrong or delayed.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {complaints.map((complaint) => (
-                <ComplaintCard
-                  key={complaint._id || complaint.onChainComplaintId}
-                  complaint={complaint}
-                  currentUserWallet={user?.walletAddress}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+            {complaints.length === 0 ? (
+              <div className="neo-card p-8 text-center space-y-2 bg-white">
+                <ShieldAlert className="w-10 h-10 text-gray-300 mx-auto" />
+                <h3 className="font-black text-lg text-brand-dark">No Complaints Filed</h3>
+                <p className="text-xs text-gray-600 font-bold">
+                  Delivered orders can be contested with IPFS-pinned evidence if items are wrong or delayed.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {complaints.map((complaint) => (
+                  <ErrorBoundary key={complaint._id || complaint.onChainComplaintId} fallbackTitle="Grievance Card Error">
+                    <ComplaintCard
+                      complaint={complaint}
+                      currentUserWallet={user?.walletAddress}
+                    />
+                  </ErrorBoundary>
+                ))}
+              </div>
+            )}
+          </div>
+        </ErrorBoundary>
       )}
 
       {/* RESTAURANT MENU & CART MODAL */}

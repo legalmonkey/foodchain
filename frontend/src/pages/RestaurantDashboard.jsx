@@ -7,6 +7,7 @@ import { useContract } from '../hooks/useContract';
 import { useSocket } from '../hooks/useSocket';
 import { OrderCard } from '../components/OrderCard';
 import { ComplaintCard } from '../components/ComplaintCard';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Award, Plus, ChefHat, AlertOctagon, CheckCircle2, X, Utensils, Scale, ClipboardList, Trash2, RefreshCw } from 'lucide-react';
 
 export const RestaurantDashboard = () => {
@@ -455,14 +456,15 @@ export const RestaurantDashboard = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {complaints.map((complaint) => (
-                <ComplaintCard
-                  key={complaint._id || complaint.onChainComplaintId}
-                  complaint={complaint}
-                  currentUserWallet={user?.walletAddress}
-                  onAcceptFault={handleAcceptFault}
-                  onContestComplaint={handleContestComplaint}
-                  actionLoading={actionLoading}
-                />
+                <ErrorBoundary key={complaint._id || complaint.onChainComplaintId} fallbackTitle="Complaint Card Error">
+                  <ComplaintCard
+                    complaint={complaint}
+                    currentUserWallet={user?.walletAddress}
+                    onAcceptFault={handleAcceptFault}
+                    onContestComplaint={handleContestComplaint}
+                    actionLoading={actionLoading}
+                  />
+                </ErrorBoundary>
               ))}
             </div>
           )}

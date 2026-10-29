@@ -15,6 +15,7 @@ import { RestaurantDashboard } from './pages/RestaurantDashboard';
 import { DeliveryDashboard } from './pages/DeliveryDashboard';
 import { JurorDashboard } from './pages/JurorDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import {
   ShieldCheck,
   Award,
@@ -315,7 +316,9 @@ const MainContent = () => {
 
       {/* Main View Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        {renderCurrentView()}
+        <ErrorBoundary fallbackTitle="View Failed to Render">
+          {renderCurrentView()}
+        </ErrorBoundary>
       </main>
 
       {/* Production Consumer Footer (Zomato-styled White, Red, Black, Zero Emojis) */}

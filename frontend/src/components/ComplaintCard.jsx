@@ -1,7 +1,7 @@
 import React from 'react';
 import { StatusBadge } from './StatusBadge';
 import { API_URL, PINATA_GATEWAY_URL, BLOCK_EXPLORER_URL } from '../config';
-import { ShieldAlert, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
+import { ShieldAlert, ExternalLink, CheckCircle2, XCircle, FileText, AlertTriangle } from 'lucide-react';
 
 export const ComplaintCard = ({
   complaint,
@@ -25,8 +25,8 @@ export const ComplaintCard = ({
         <div className="flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 text-brand-red" />
           <h3 className="font-black text-base">
-            Complaint #{complaint.onChainComplaintId || complaint._id?.slice(-4)} —{' '}
-            <span className="text-brand-red">{complaint.category}</span>
+            Complaint #{complaint.onChainComplaintId || complaint._id?.slice(-4) || '—'} —{' '}
+            <span className="text-brand-red">{complaint.category || 'General'}</span>
           </h3>
         </div>
         <StatusBadge status={complaint.status} />
@@ -53,7 +53,7 @@ export const ComplaintCard = ({
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-blue-700 underline"
             >
-              <span>{complaint.evidenceCID.slice(0, 12)}...</span>
+              <span>{complaint.evidenceCID?.slice(0, 12)}...</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
@@ -78,8 +78,8 @@ export const ComplaintCard = ({
 
       {/* Addresses */}
       <div className="text-[11px] font-mono space-y-1 text-gray-700 bg-white border border-black p-2">
-        <div>Filer: <span className="font-bold">{complaint.filerAddress}</span></div>
-        <div>Respondent: <span className="font-bold">{complaint.respondentAddress}</span></div>
+        <div>Filer: <span className="font-bold">{complaint.filerAddress || 'Customer'}</span></div>
+        <div>Respondent: <span className="font-bold">{complaint.respondentAddress || 'Restaurant'}</span></div>
       </div>
 
       {/* Respondent Action Buttons */}
