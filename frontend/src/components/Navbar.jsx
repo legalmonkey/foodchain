@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useWeb3 } from '../context/Web3Context';
+import { useSocket } from '../hooks/useSocket';
 import {
   ShieldCheck,
   LogOut,
@@ -16,7 +18,7 @@ import {
   ExternalLink,
   ChevronDown
 } from 'lucide-react';
-import { BLOCK_EXPLORER_URL } from '../config';
+import { BLOCK_EXPLORER_URL, API_URL } from '../config';
 
 export const Navbar = ({ currentTab, setCurrentTab }) => {
   const { user, logout } = useAuth();
@@ -41,6 +43,8 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
   const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeBalance, setActiveBalance] = useState(balance || '0.000');
+  const [rupeeBalance, setRupeeBalance] = useState(0);
+  const [rupeeDetails, setRupeeDetails] = useState(null);
 
   // Primary address represents the authenticated user's account wallet address
   const activeAddress = user?.walletAddress || account;
@@ -82,6 +86,40 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
       cancelled = true;
     };
   }, [activeAddress, provider, balance]);
+
+  // Synchronize and dynamically update Rupee balance for rider, restaurant, or admin
+  const fetchRupeeBalance = React.useCallback(async () => {
+    if (!user) {
+      setRupeeBalance(0);
+      setRupeeDetails(null);
+      return;
+    }
+    try {
+      const res = await axios.get(`${API_URL}/api/orders/rupee-balance`);
+      if (res.data && res.data.balance !== undefined) {
+        setRupeeBalance(res.data.balance);
+        setRupeeDetails(res.data.details);
+      }
+    } catch (err) {
+      console.warn('Rupee balance sync error:', err.message);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchRupeeBalance();
+    const interval = setInterval(fetchRupeeBalance, 8000);
+    return () => clearInterval(interval);
+  }, [fetchRupeeBalance]);
+
+  // Socket triggers for instant real-time dynamic balance updates
+  useSocket({
+    orderCreated: () => fetchRupeeBalance(),
+    orderStatusChanged: () => fetchRupeeBalance(),
+    orderStatusUpdated: () => fetchRupeeBalance(),
+    orderEscrowUpdated: () => fetchRupeeBalance(),
+    rupeeBalanceUpdated: () => fetchRupeeBalance(),
+    clawbackRequested: () => fetchRupeeBalance(),
+  });
 
   const navLinks = [
     { id: 'landing', label: 'Home' },
@@ -159,6 +197,25 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
               </div>
             )}
 
+            {/* Dynamic Rupee Balance for Rider, Restaurant, Admin, or Customer */}
+            {user && (
+              <div
+                title={`${rupeeDetails?.label || 'Account Balance'}: ₹${rupeeBalance.toLocaleString('en-IN')}`}
+                className="flex items-center gap-1.5 bg-brand-yellow border-2 border-brand-dark px-2.5 py-1.5 rounded-md text-xs font-black text-brand-dark shadow-neo-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-default select-none"
+              >
+                <span className="font-mono text-xs font-black">₹{rupeeBalance.toLocaleString('en-IN')}</span>
+                <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-black text-white">
+                  {user.role === 'delivery_partner'
+                    ? 'Rider'
+                    : user.role === 'restaurant'
+                    ? 'Kitchen'
+                    : user.role === 'admin'
+                    ? 'Admin'
+                    : 'Refunds'}
+                </span>
+              </div>
+            )}
+
             {/* Web3 Wallet Connect / Interactive Dropdown */}
             {activeAddress ? (
               <div className="relative">
@@ -222,9 +279,17 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
                     )}
 
                     {/* Balance */}
-                    <div className="flex justify-between items-center py-1">
-                      <span className="text-xs font-bold text-gray-600">POL Balance:</span>
-                      <span className="text-sm font-black text-brand-dark">{activeBalance} POL</span>
+                    <div className="space-y-1.5 py-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-gray-600">POL Balance:</span>
+                        <span className="text-sm font-black text-brand-dark">{activeBalance} POL</span>
+                      </div>
+                      {user && (
+                        <div className="flex justify-between items-center bg-brand-yellow/30 px-2 py-1 rounded border border-brand-dark/20">
+                          <span className="text-xs font-bold text-brand-dark">{rupeeDetails?.label || 'Rupee Balance'}:</span>
+                          <span className="text-sm font-black text-brand-dark">₹{rupeeBalance.toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Action buttons inside dropdown */}
@@ -371,6 +436,12 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
                     <span className="text-gray-500">Balance:</span>
                     <span>{activeBalance} POL</span>
                   </div>
+                  {user && (
+                    <div className="flex items-center justify-between font-black bg-brand-yellow/30 p-1.5 rounded border border-black/20">
+                      <span className="text-gray-700">{rupeeDetails?.label || 'Rupee Balance'}:</span>
+                      <span className="text-brand-dark">₹{rupeeBalance.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
                   {account ? (
                     <button
                       onClick={disconnectWallet}

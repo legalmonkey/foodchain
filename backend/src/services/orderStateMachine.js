@@ -199,6 +199,7 @@ async function advanceOrderStatus(orderId, targetStatus, io, triggeredBy = "MANU
       order: populatedOrder,
       triggeredBy,
     });
+    io.emit("rupeeBalanceUpdated", { orderId: order._id });
   }
 
   // Schedule next automatic step if not delivered/closed

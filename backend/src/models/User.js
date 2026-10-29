@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema({
     type: String, // Stored as wei string for precision
     default: "0",
   },
+  rupeeBalance: {
+    type: Number,
+    default: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

@@ -172,11 +172,74 @@ exports.dispatchEscrow = async (req, res) => {
     if (io) {
       io.emit("orderEscrowUpdated", { orderId: order._id, escrow: order.escrow, order });
       io.emit("orderStatusUpdated", { orderId: order._id, status: order.status, order });
+      io.emit("rupeeBalanceUpdated", { orderId: order._id });
     }
 
     res.json({
       message: `Escrow dispatched: ₹${restAmt} to Kitchen, ₹${riderAmt} to Rider`,
       escrow: order.escrow,
+      order,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.clawbackOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let order = null;
+
+    if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(id)) {
+      try {
+        order = await Order.findById(id);
+      } catch (e) {}
+    }
+    if (!order) {
+      order = inMemoryDb.orders.find((o) => String(o._id) === String(id));
+    }
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const restAmt = order.escrow?.restaurantAmount || Math.round((order.totalPrice || 200) * 0.8);
+
+    if (!order.escrow) {
+      order.escrow = { status: "DISPATCHED" };
+    }
+    order.escrow.clawbackRequested = true;
+    order.escrow.clawbackRequestedAt = new Date();
+    order.escrow.notes = `Platform Admin ordered Restaurant to refund ₹${restAmt} back to customer due to unresolved grievance.`;
+
+    if (order.save) {
+      try {
+        await order.save();
+      } catch (e) {}
+    }
+
+    const inMem = inMemoryDb.orders.find((o) => String(o._id) === String(id));
+    if (inMem) {
+      if (!inMem.escrow) inMem.escrow = {};
+      inMem.escrow.clawbackRequested = true;
+      inMem.escrow.clawbackRequestedAt = order.escrow.clawbackRequestedAt;
+      inMem.escrow.notes = order.escrow.notes;
+    }
+
+    const io = getIO();
+    if (io) {
+      io.emit("orderEscrowUpdated", { orderId: order._id, escrow: order.escrow, order });
+      io.emit("clawbackRequested", {
+        orderId: order._id,
+        restaurantId: order.restaurantId,
+        amount: restAmt,
+        notes: order.escrow.notes,
+      });
+      io.emit("rupeeBalanceUpdated", { orderId: order._id });
+    }
+
+    res.json({
+      message: `Demand issued: Restaurant has been formally ordered to pay back ₹${restAmt} for Order #${order._id.toString().slice(-6)}`,
       order,
     });
   } catch (err) {
@@ -212,6 +275,7 @@ exports.refundEscrow = async (req, res) => {
       platformFee: 0,
       dispatchedAt: null,
       refundedAt: new Date(),
+      clawbackRequested: false,
       notes: `Escrow returned: Full refund of ₹${orderTotal} returned to customer following grievance redressal`,
     };
 
@@ -230,6 +294,7 @@ exports.refundEscrow = async (req, res) => {
     if (io) {
       io.emit("orderEscrowUpdated", { orderId: order._id, escrow: order.escrow, order });
       io.emit("orderStatusUpdated", { orderId: order._id, status: order.status, order });
+      io.emit("rupeeBalanceUpdated", { orderId: order._id });
     }
 
     res.json({

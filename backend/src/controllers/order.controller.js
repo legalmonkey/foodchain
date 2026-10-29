@@ -132,6 +132,7 @@ exports.createOrder = async (req, res) => {
 
     if (io) {
       io.emit("orderCreated", populated);
+      io.emit("rupeeBalanceUpdated", { orderId: order._id });
     }
 
     res.status(201).json(populated);
@@ -372,6 +373,117 @@ exports.assignDelivery = async (req, res) => {
     if (order.save) await order.save();
 
     res.json({ message: "Delivery partner assigned", order });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getRupeeBalance = async (req, res) => {
+  try {
+    const user = req.user;
+    const role = user.role;
+    let balance = Number(user.rupeeBalance || 0);
+    let details = {};
+
+    // Collect all orders from DB + inMemoryDb
+    let dbOrders = [];
+    if (mongoose.connection.readyState === 1) {
+      try {
+        dbOrders = await Order.find().lean();
+      } catch (e) {}
+    }
+
+    const orderMap = new Map();
+    for (const o of dbOrders) orderMap.set(String(o._id), o);
+    for (const o of inMemoryDb.orders) {
+      if (!orderMap.has(String(o._id))) orderMap.set(String(o._id), o);
+    }
+    const allOrders = Array.from(orderMap.values());
+
+    if (role === "delivery_partner") {
+      const riderOrders = allOrders.filter((o) => {
+        const isMyId = String(o.deliveryPartnerId?._id || o.deliveryPartnerId) === String(user._id);
+        const isDelivered = ["DELIVERED", "CLOSED"].includes(o.status);
+        return isMyId || isDelivered;
+      });
+
+      const dispatchedOrders = riderOrders.filter((o) => o.escrow?.status === "DISPATCHED");
+      const earned = dispatchedOrders.reduce((sum, o) => {
+        return sum + Number(o.escrow?.riderAmount || Math.round((o.totalPrice || 200) * 0.15));
+      }, 0);
+
+      balance += earned;
+      details = {
+        role: "delivery_partner",
+        dispatchedCount: dispatchedOrders.length,
+        label: "Rider Earnings",
+      };
+    } else if (role === "restaurant") {
+      const normWallet = (user.walletAddress || "").toLowerCase();
+      let myRest = inMemoryDb.restaurants.find(
+        (r) => (r.walletAddress || "").toLowerCase() === normWallet ||
+               String(r.ownerUserId) === String(user._id)
+      );
+      const restOrders = allOrders.filter((o) => {
+        const oRestId = String(o.restaurantId?._id || o.restaurantId || "");
+        const oRestWallet = (o.restaurantWallet || o.restaurantId?.walletAddress || "").toLowerCase();
+        return (
+          (myRest && oRestId === String(myRest._id)) ||
+          oRestWallet === normWallet ||
+          !myRest
+        );
+      });
+
+      const dispatchedOrders = restOrders.filter((o) => o.escrow?.status === "DISPATCHED");
+      const earned = dispatchedOrders.reduce((sum, o) => {
+        return sum + Number(o.escrow?.restaurantAmount || Math.round((o.totalPrice || 200) * 0.8));
+      }, 0);
+
+      balance += earned;
+      details = {
+        role: "restaurant",
+        dispatchedCount: dispatchedOrders.length,
+        label: "Kitchen Payouts",
+      };
+    } else if (role === "admin") {
+      const activeEscrow = allOrders
+        .filter((o) => !o.escrow || o.escrow?.status === "HELD_BY_ADMIN")
+        .reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
+
+      const feesEarned = allOrders
+        .filter((o) => o.escrow?.status === "DISPATCHED")
+        .reduce((sum, o) => sum + Number(o.escrow?.platformFee || Math.round((o.totalPrice || 200) * 0.05)), 0);
+
+      balance = activeEscrow + feesEarned;
+      details = {
+        role: "admin",
+        activeEscrow,
+        feesEarned,
+        totalVault: activeEscrow + feesEarned,
+        label: "Admin Platform Treasury",
+      };
+    } else {
+      // Customer
+      const myOrders = allOrders.filter(
+        (o) => String(o.customerId?._id || o.customerId) === String(user._id) ||
+               (o.customerWallet && o.customerWallet.toLowerCase() === (user.walletAddress || "").toLowerCase())
+      );
+      const refunds = myOrders
+        .filter((o) => o.escrow?.status === "REFUNDED")
+        .reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
+      balance += refunds;
+      details = {
+        role: "customer",
+        refundCount: myOrders.filter((o) => o.escrow?.status === "REFUNDED").length,
+        label: "Refund Balance",
+      };
+    }
+
+    res.json({
+      balance,
+      formatted: `₹${balance.toLocaleString("en-IN")}`,
+      details,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

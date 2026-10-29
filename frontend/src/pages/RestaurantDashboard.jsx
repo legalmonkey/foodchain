@@ -320,6 +320,26 @@ export const RestaurantDashboard = () => {
         </div>
       </div>
 
+      {/* Admin Clawback Notice if ordered to pay money back */}
+      {orders.filter((o) => o.escrow?.clawbackRequested).length > 0 && (
+        <div className="bg-amber-100 border-3 border-black p-4 shadow-neo flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-6 h-6 text-amber-700 shrink-0" />
+            <div>
+              <h3 className="font-black text-amber-950 uppercase text-sm">
+                Platform Action Required: Clawback Notice Issued by Admin
+              </h3>
+              <p className="text-xs text-amber-900 font-semibold">
+                Platform Administrator has ordered your kitchen to pay back funds for {orders.filter((o) => o.escrow?.clawbackRequested).length} order(s) due to grievance resolution.
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-black uppercase px-2.5 py-1 bg-amber-400 text-black border border-black rounded shadow-neo-sm">
+            Ordered to Pay Back
+          </span>
+        </div>
+      )}
+
       {/* Cross-kitchen incoming order alert banner */}
       {pendingKitchenAlert && (
         <div className="bg-brand-yellow border-3 border-black p-3.5 shadow-neo flex flex-wrap items-center justify-between gap-3 animate-pulse">

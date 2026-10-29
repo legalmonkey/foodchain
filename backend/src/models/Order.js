@@ -34,6 +34,8 @@ const escrowSchema = new mongoose.Schema({
   platformFee: { type: Number, default: 0 },
   dispatchedAt: { type: Date, default: null },
   refundedAt: { type: Date, default: null },
+  clawbackRequested: { type: Boolean, default: false },
+  clawbackRequestedAt: { type: Date, default: null },
   notes: { type: String, default: "" },
 });
 

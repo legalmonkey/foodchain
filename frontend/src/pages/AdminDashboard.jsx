@@ -75,6 +75,26 @@ export const AdminDashboard = () => {
     }
   };
 
+  const handleClawbackOrder = async (orderId) => {
+    if (!window.confirm("Formally order the restaurant to pay back the dispatched funds for this order?")) return;
+    setActionLoadingId(orderId);
+    try {
+      const res = await axios.post(`${API_URL}/api/admin/orders/${orderId}/clawback-order`);
+      alert(`✓ ${res.data.message}`);
+      setOrders((prev) =>
+        prev.map((o) =>
+          String(o._id) === String(orderId)
+            ? { ...o, escrow: res.data.order?.escrow || { ...o.escrow, clawbackRequested: true } }
+            : o
+        )
+      );
+    } catch (err) {
+      alert(`Clawback demand failed: ${err.response?.data?.error || err.message}`);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleForceFinalize = async (caseId, forcedVerdict) => {
     // 1 = Uphold (Customer Wins), 2 = Reject
     try {
@@ -147,6 +167,12 @@ export const AdminDashboard = () => {
                   const restAmt = o.escrow?.restaurantAmount || Math.round((o.totalPrice || 200) * 0.8);
                   const riderAmt = o.escrow?.riderAmount || Math.round((o.totalPrice || 200) * 0.15);
                   const isDelivered = o.status === 'DELIVERED' || o.status === 'CLOSED';
+                  const orderComplaint = complaints.find((c) => {
+                    const cOrderId = String(c.orderId?._id || c.orderId || '');
+                    return cOrderId === String(o._id) || (o.onChainOrderKey && c.orderKey === o.onChainOrderKey);
+                  });
+                  const hasDispute = Boolean(orderComplaint || o.hasDispute);
+                  const clawbackRequested = Boolean(o.escrow?.clawbackRequested);
 
                   return (
                     <tr key={o._id} className="hover:bg-yellow-50 font-semibold">
@@ -192,36 +218,70 @@ export const AdminDashboard = () => {
                       </td>
                       <td className="p-3">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          {escrowStatus !== 'DISPATCHED' && escrowStatus !== 'REFUNDED' && (
-                            <button
-                              onClick={() => handleDispatchEscrow(o._id)}
-                              disabled={actionLoadingId === o._id}
-                              className={`neo-btn text-[11px] font-black py-1 px-2.5 flex items-center gap-1 ${
-                                isDelivered
-                                  ? 'bg-green-600 hover:bg-green-700 text-white shadow-neo-sm'
-                                  : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
-                              }`}
-                              title={`Dispatch ₹${restAmt} to Kitchen and ₹${riderAmt} to Rider`}
-                            >
-                              <DollarSign className="w-3.5 h-3.5" />
-                              <span>Dispatch Money</span>
-                            </button>
-                          )}
+                          {escrowStatus === 'DISPATCHED' ? (
+                            clawbackRequested ? (
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-400 rounded">
+                                  <AlertTriangle className="w-3 h-3 text-amber-700" />
+                                  <span>Restaurant Ordered to Pay Back</span>
+                                </span>
+                                {hasDispute && (
+                                  <button
+                                    onClick={() => handleRefundEscrow(o._id)}
+                                    disabled={actionLoadingId === o._id}
+                                    className="neo-btn bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-400 text-[10px] font-black py-0.5 px-1.5 flex items-center gap-1"
+                                    title="Dispute upheld: return funds to customer"
+                                  >
+                                    <RotateCcw className="w-2.5 h-2.5" />
+                                    <span>Force Refund to Customer</span>
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleClawbackOrder(o._id)}
+                                disabled={actionLoadingId === o._id}
+                                className="neo-btn bg-amber-300 hover:bg-amber-400 text-brand-dark border-2 border-brand-dark text-[11px] font-black py-1 px-2.5 flex items-center gap-1 shadow-neo-sm"
+                                title="Dispatched: Order restaurant to pay the money back"
+                              >
+                                <AlertTriangle className="w-3.5 h-3.5 text-black" />
+                                <span>Order restaurant to pay the money back</span>
+                              </button>
+                            )
+                          ) : escrowStatus === 'REFUNDED' ? (
+                            <span className="text-[11px] font-black text-purple-700 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>✓ Refunded to Customer</span>
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleDispatchEscrow(o._id)}
+                                disabled={actionLoadingId === o._id}
+                                className={`neo-btn text-[11px] font-black py-1 px-2.5 flex items-center gap-1 ${
+                                  isDelivered
+                                    ? 'bg-green-600 hover:bg-green-700 text-white shadow-neo-sm'
+                                    : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                                }`}
+                                title={`Dispatch ₹${restAmt} to Kitchen and ₹${riderAmt} to Rider`}
+                              >
+                                <DollarSign className="w-3.5 h-3.5" />
+                                <span>Dispatch Money</span>
+                              </button>
 
-                          {escrowStatus !== 'REFUNDED' && (
-                            <button
-                              onClick={() => handleRefundEscrow(o._id)}
-                              disabled={actionLoadingId === o._id}
-                              className="neo-btn bg-red-100 hover:bg-red-200 text-red-900 border border-red-400 text-[11px] font-black py-1 px-2 flex items-center gap-1"
-                              title="Return full order payment back to customer"
-                            >
-                              <RotateCcw className="w-3 h-3" />
-                              <span>Return Money</span>
-                            </button>
-                          )}
-
-                          {escrowStatus === 'DISPATCHED' && (
-                            <span className="text-[11px] font-black text-green-700">✓ Completed</span>
+                              {/* Return money is an option ONLY when dispute */}
+                              {hasDispute && (
+                                <button
+                                  onClick={() => handleRefundEscrow(o._id)}
+                                  disabled={actionLoadingId === o._id}
+                                  className="neo-btn bg-red-100 hover:bg-red-200 text-red-900 border border-red-400 text-[11px] font-black py-1 px-2 flex items-center gap-1"
+                                  title="Active grievance dispute found: Return full order payment back to customer"
+                                >
+                                  <RotateCcw className="w-3 h-3 text-red-700" />
+                                  <span>Return Money (Dispute)</span>
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>

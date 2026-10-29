@@ -9,6 +9,7 @@ router.get("/orders", adminController.getAllOrders);
 router.patch("/orders/:id/force-status", adminController.forceOrderStatus);
 router.post("/orders/:id/dispatch-escrow", adminController.dispatchEscrow);
 router.post("/orders/:id/refund-escrow", adminController.refundEscrow);
+router.post("/orders/:id/clawback-order", adminController.clawbackOrder);
 router.get("/complaints", adminController.getAllComplaints);
 router.post("/complaints/:caseId/force-finalize", adminController.forceFinalizeDispute);
 

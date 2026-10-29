@@ -5,6 +5,7 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 
 router.post("/", verifyToken, requireRole("customer", "admin"), orderController.createOrder);
 router.get("/mine", verifyToken, orderController.getMyOrders);
+router.get("/rupee-balance", verifyToken, orderController.getRupeeBalance);
 router.get("/:id", verifyToken, orderController.getOrderById);
 router.patch("/:id/status", verifyToken, requireRole("restaurant", "delivery_partner", "admin"), orderController.updateOrderStatus);
 router.post("/:id/assign-delivery", verifyToken, requireRole("admin", "restaurant"), orderController.assignDelivery);
