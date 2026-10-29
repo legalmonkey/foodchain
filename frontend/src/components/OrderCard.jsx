@@ -95,6 +95,37 @@ export const OrderCard = ({
         </div>
       </div>
 
+      {/* Smart Contract Escrow Status */}
+      <div className="bg-gray-50 border border-black p-2.5 rounded text-xs space-y-1">
+        <div className="flex items-center justify-between font-bold">
+          <span className="flex items-center gap-1.5 text-gray-700">
+            <Lock className="w-3.5 h-3.5 text-brand-dark" />
+            <span>Escrow Protection:</span>
+          </span>
+          {order.escrow?.status === 'DISPATCHED' ? (
+            <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-green-100 text-green-900 border border-green-400 rounded flex items-center gap-1">
+              <Check className="w-3 h-3 text-green-700" />
+              <span>Settled & Dispatched</span>
+            </span>
+          ) : order.escrow?.status === 'REFUNDED' ? (
+            <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-purple-100 text-purple-900 border border-purple-400 rounded">
+              ↩ Refunded to Customer
+            </span>
+          ) : (
+            <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-yellow-100 text-yellow-900 border border-yellow-400 rounded">
+              Locked in Admin Escrow
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-gray-600 font-medium">
+          {order.escrow?.status === 'DISPATCHED'
+            ? `Payout split: ₹${order.escrow.restaurantAmount || Math.round(order.totalPrice * 0.8)} to Kitchen, ₹${order.escrow.riderAmount || Math.round(order.totalPrice * 0.15)} to Rider.`
+            : order.escrow?.status === 'REFUNDED'
+            ? `Full order payment of ₹${order.totalPrice} has been returned to the customer.`
+            : `₹${order.totalPrice} is held in Admin Escrow and will be dispatched to the rider & restaurant upon delivery.`}
+        </p>
+      </div>
+
       {/* Delivery Address */}
       <div className="text-xs text-gray-600 flex items-center gap-1.5">
         <MapPin className="w-3.5 h-3.5 text-brand-red shrink-0" />

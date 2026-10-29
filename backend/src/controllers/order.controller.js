@@ -74,6 +74,17 @@ exports.createOrder = async (req, res) => {
       deliveryAddress,
       status: "PLACED",
       statusTimestamps: { placed: new Date() },
+      escrow: {
+        status: "HELD_BY_ADMIN",
+        amount: computedTotal,
+        heldBy: "Platform Admin Escrow",
+        restaurantAmount: Math.round(computedTotal * 0.8),
+        riderAmount: Math.round(computedTotal * 0.15),
+        platformFee: Math.round(computedTotal * 0.05),
+        dispatchedAt: null,
+        refundedAt: null,
+        notes: "Funds held in Admin escrow until delivery",
+      },
       createdAt: new Date(),
     };
 
@@ -214,7 +225,16 @@ exports.getMyOrders = async (req, res) => {
     // Merge DB orders and in-memory orders
     const combinedOrdersMap = new Map();
     for (const o of dbOrders) {
-      combinedOrdersMap.set(String(o._id), o);
+      combinedOrdersMap.set(String(o._id), {
+        ...o,
+        escrow: o.escrow || {
+          status: o.status === "DELIVERED" || o.status === "CLOSED" ? "DISPATCHED" : "HELD_BY_ADMIN",
+          amount: o.totalPrice,
+          restaurantAmount: Math.round((o.totalPrice || 200) * 0.8),
+          riderAmount: Math.round((o.totalPrice || 200) * 0.15),
+          platformFee: Math.round((o.totalPrice || 200) * 0.05),
+        },
+      });
     }
 
     let inMemFiltered = inMemoryDb.orders;
@@ -267,6 +287,13 @@ exports.getMyOrders = async (req, res) => {
           customerId: customer || o.customerId || { name: req.user.name || "Customer", walletAddress: req.user.walletAddress },
           restaurantId: restaurant || o.restaurantId || { name: "Restaurant", walletAddress: "0x..." },
           deliveryPartnerId: delivery || null,
+          escrow: o.escrow || {
+            status: o.status === "DELIVERED" || o.status === "CLOSED" ? "DISPATCHED" : "HELD_BY_ADMIN",
+            amount: o.totalPrice,
+            restaurantAmount: Math.round((o.totalPrice || 200) * 0.8),
+            riderAmount: Math.round((o.totalPrice || 200) * 0.15),
+            platformFee: Math.round((o.totalPrice || 200) * 0.05),
+          },
         });
       }
     }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ethers } from 'ethers';
 import { useAuth } from '../context/AuthContext';
 import { useWeb3 } from '../context/Web3Context';
 import {
@@ -21,6 +22,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
   const { user, logout } = useAuth();
   const {
     account,
+    provider,
     balance,
     isAmoy,
     isSupported,
@@ -38,6 +40,10 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [activeBalance, setActiveBalance] = useState(balance || '0.000');
+
+  // Primary address represents the authenticated user's account wallet address
+  const activeAddress = user?.walletAddress || account;
 
   const shortenAddress = (addr) => {
     if (!addr) return '';
@@ -50,6 +56,32 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Keep displayed balance synchronized with the active logged-in address
+  React.useEffect(() => {
+    if (!activeAddress) return;
+    let cancelled = false;
+
+    const fetchBalance = async () => {
+      try {
+        if (provider) {
+          const raw = await provider.getBalance(activeAddress);
+          if (!cancelled) setActiveBalance(parseFloat(ethers.formatEther(raw)).toFixed(3));
+        } else {
+          const publicRpc = new ethers.JsonRpcProvider('https://polygon-amoy-bor-rpc.publicnode.com');
+          const raw = await publicRpc.getBalance(activeAddress);
+          if (!cancelled) setActiveBalance(parseFloat(ethers.formatEther(raw)).toFixed(3));
+        }
+      } catch (e) {
+        if (!cancelled && balance) setActiveBalance(balance);
+      }
+    };
+
+    fetchBalance();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeAddress, provider, balance]);
 
   const navLinks = [
     { id: 'landing', label: 'Home' },
@@ -128,38 +160,42 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
             )}
 
             {/* Web3 Wallet Connect / Interactive Dropdown */}
-            {account ? (
+            {activeAddress ? (
               <div className="relative">
                 <button
                   onClick={() => setWalletDropdownOpen(!walletDropdownOpen)}
                   className="flex items-center gap-2 bg-brand-gray border-2 border-brand-dark px-3 py-1.5 rounded-md text-xs font-black text-brand-dark hover:bg-brand-grayBorder shadow-neo-sm transition-all"
+                  title={`Account: ${activeAddress}`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                  <span className="text-brand-dark font-extrabold">{balance} POL</span>
+                  <span className={`w-2 h-2 rounded-full ${account ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></span>
+                  <span className="text-brand-dark font-extrabold">{activeBalance} POL</span>
                   <span className="text-gray-400">|</span>
-                  <span className="font-mono text-gray-800">{shortenAddress(account)}</span>
+                  <span className="font-mono text-gray-800">{shortenAddress(activeAddress)}</span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${walletDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown Menu */}
                 {walletDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white border-2 border-brand-dark rounded-lg shadow-neo p-4 z-50 space-y-3">
+                  <div className="absolute right-0 mt-2 w-80 bg-white border-2 border-brand-dark rounded-lg shadow-neo p-4 z-50 space-y-3">
                     <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                      <span className="text-[10px] font-black uppercase text-gray-500">Connected Wallet</span>
+                      <span className="text-[10px] font-black uppercase text-gray-500">Account Wallet</span>
                       <span className="text-[11px] font-bold px-2 py-0.5 bg-green-100 text-green-900 border border-green-300 rounded">
                         {getNetworkLabel()}
                       </span>
                     </div>
 
-                    {/* Address with copy */}
+                    {/* Logged in User Wallet */}
                     <div className="space-y-1">
-                      <div className="text-[10px] text-gray-500 font-bold uppercase">Account Address</div>
+                      <div className="flex justify-between items-center text-[10px] text-gray-500 font-bold uppercase">
+                        <span>Logged In Address</span>
+                        {user && <span className="text-brand-red font-black">({user.role})</span>}
+                      </div>
                       <div className="flex items-center justify-between bg-brand-gray p-2 rounded border border-gray-300">
                         <span className="font-mono text-xs font-bold text-brand-dark truncate mr-2">
-                          {account}
+                          {activeAddress}
                         </span>
                         <button
-                          onClick={() => copyToClipboard(account)}
+                          onClick={() => copyToClipboard(activeAddress)}
                           className="p-1 hover:bg-white rounded transition-colors text-gray-700"
                           title="Copy address"
                         >
@@ -168,47 +204,75 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
                       </div>
                     </div>
 
-                    {/* Balance */}
-                    <div className="flex justify-between items-center py-1">
-                      <span className="text-xs font-bold text-gray-600">Balance:</span>
-                      <span className="text-sm font-black text-brand-dark">{balance} POL</span>
-                    </div>
-
-                    {/* Network Switcher button if on unsupported network */}
-                    {!isSupported && (
-                      <button
-                        onClick={switchNetwork}
-                        className="w-full neo-btn-primary py-2 text-xs flex items-center justify-center gap-1.5"
-                      >
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        <span>Switch to Polygon Amoy</span>
-                      </button>
+                    {/* MetaMask status info */}
+                    {account && user?.walletAddress && account.toLowerCase() !== user.walletAddress.toLowerCase() && (
+                      <div className="bg-amber-50 border border-amber-300 p-2 rounded text-[11px] font-semibold text-amber-900 space-y-1">
+                        <div className="flex items-center gap-1 font-bold text-amber-800">
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                          <span>MetaMask Account Mismatch</span>
+                        </div>
+                        <div>MetaMask is on <span className="font-mono">{shortenAddress(account)}</span>. Sign transactions using this wallet or switch accounts in MetaMask.</div>
+                      </div>
                     )}
 
-                    {/* External Explorer Link */}
-                    <a
-                      href={`${BLOCK_EXPLORER_URL}/address/${account}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-center text-xs font-bold text-brand-red hover:underline py-1"
-                    >
-                      <span className="inline-flex items-center gap-1">
-                        View on PolygonScan <ExternalLink className="w-3 h-3" />
-                      </span>
-                    </a>
+                    {!account && (
+                      <div className="bg-blue-50 border border-blue-300 p-2 rounded text-[11px] font-medium text-blue-900">
+                        Web3 extension not connected. Click below to sign transactions on-chain.
+                      </div>
+                    )}
 
-                    {/* Disconnect */}
-                    <div className="pt-2 border-t border-gray-200">
-                      <button
-                        onClick={() => {
-                          disconnectWallet();
-                          setWalletDropdownOpen(false);
-                        }}
-                        className="w-full border-2 border-brand-dark py-1.5 text-xs font-black text-gray-700 hover:bg-red-50 hover:text-brand-red rounded transition-colors"
-                      >
-                        Disconnect Wallet
-                      </button>
+                    {/* Balance */}
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-xs font-bold text-gray-600">POL Balance:</span>
+                      <span className="text-sm font-black text-brand-dark">{activeBalance} POL</span>
                     </div>
+
+                    {/* Action buttons inside dropdown */}
+                    {!account ? (
+                      <button
+                        onClick={connectWallet}
+                        disabled={connecting}
+                        className="w-full neo-btn-primary py-2 text-xs flex items-center justify-center gap-1.5"
+                      >
+                        <Wallet className="w-3.5 h-3.5" />
+                        <span>{connecting ? 'Connecting...' : 'Connect MetaMask'}</span>
+                      </button>
+                    ) : (
+                      <>
+                        {!isSupported && (
+                          <button
+                            onClick={switchNetwork}
+                            className="w-full neo-btn-primary py-2 text-xs flex items-center justify-center gap-1.5"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            <span>Switch to Polygon Amoy</span>
+                          </button>
+                        )}
+
+                        <a
+                          href={`${BLOCK_EXPLORER_URL}/address/${activeAddress}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-center text-xs font-bold text-brand-red hover:underline py-1"
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            View on PolygonScan <ExternalLink className="w-3 h-3" />
+                          </span>
+                        </a>
+
+                        <div className="pt-2 border-t border-gray-200">
+                          <button
+                            onClick={() => {
+                              disconnectWallet();
+                              setWalletDropdownOpen(false);
+                            }}
+                            className="w-full border-2 border-brand-dark py-1.5 text-xs font-black text-gray-700 hover:bg-red-50 hover:text-brand-red rounded transition-colors"
+                          >
+                            Disconnect Web3 Wallet
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -297,22 +361,31 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
             </div>
 
             <div className="pt-2 border-t border-gray-200 flex flex-col gap-2">
-              {account ? (
+              {activeAddress ? (
                 <div className="p-3 bg-brand-gray rounded-lg border border-brand-dark space-y-2 text-xs">
                   <div className="flex items-center justify-between font-bold">
-                    <span className="text-gray-500">Wallet:</span>
-                    <span className="font-mono text-brand-dark">{shortenAddress(account)}</span>
+                    <span className="text-gray-500">Account:</span>
+                    <span className="font-mono text-brand-dark">{shortenAddress(activeAddress)}</span>
                   </div>
                   <div className="flex items-center justify-between font-black">
                     <span className="text-gray-500">Balance:</span>
-                    <span>{balance} POL</span>
+                    <span>{activeBalance} POL</span>
                   </div>
-                  <button
-                    onClick={disconnectWallet}
-                    className="w-full border border-black bg-white py-1 font-bold text-[11px] text-brand-red rounded"
-                  >
-                    Disconnect
-                  </button>
+                  {account ? (
+                    <button
+                      onClick={disconnectWallet}
+                      className="w-full border border-black bg-white py-1 font-bold text-[11px] text-brand-red rounded"
+                    >
+                      Disconnect MetaMask
+                    </button>
+                  ) : (
+                    <button
+                      onClick={connectWallet}
+                      className="w-full border border-black bg-brand-red text-white py-1 font-bold text-[11px] rounded"
+                    >
+                      Connect MetaMask
+                    </button>
+                  )}
                 </div>
               ) : (
                 <button

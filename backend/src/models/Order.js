@@ -21,6 +21,22 @@ const orderItemSchema = new mongoose.Schema({
   },
 });
 
+const escrowSchema = new mongoose.Schema({
+  status: {
+    type: String,
+    enum: ["HELD_BY_ADMIN", "DISPATCHED", "REFUNDED"],
+    default: "HELD_BY_ADMIN",
+  },
+  amount: { type: Number, default: 0 },
+  heldBy: { type: String, default: "Platform Admin Escrow" },
+  restaurantAmount: { type: Number, default: 0 },
+  riderAmount: { type: Number, default: 0 },
+  platformFee: { type: Number, default: 0 },
+  dispatchedAt: { type: Date, default: null },
+  refundedAt: { type: Date, default: null },
+  notes: { type: String, default: "" },
+});
+
 const orderSchema = new mongoose.Schema({
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -62,6 +78,10 @@ const orderSchema = new mongoose.Schema({
     outForDelivery: { type: Date },
     delivered: { type: Date },
     closed: { type: Date },
+  },
+  escrow: {
+    type: escrowSchema,
+    default: () => ({ status: "HELD_BY_ADMIN" }),
   },
   onChainOrderKey: {
     type: String,

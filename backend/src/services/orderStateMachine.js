@@ -141,6 +141,21 @@ async function advanceOrderStatus(orderId, targetStatus, io, triggeredBy = "MANU
         console.error("Mark on-chain delivered error:", e.message)
       );
     }
+
+    if (!order.escrow) {
+      const orderTotal = Number(order.totalPrice || 200);
+      order.escrow = {
+        status: "HELD_BY_ADMIN",
+        amount: orderTotal,
+        heldBy: "Platform Admin Escrow",
+        restaurantAmount: Math.round(orderTotal * 0.8),
+        riderAmount: Math.round(orderTotal * 0.15),
+        platformFee: Math.round(orderTotal * 0.05),
+        dispatchedAt: null,
+        refundedAt: null,
+        notes: "Funds held in Escrow ready for dispatch payout",
+      };
+    }
   } else if (targetStatus === "CLOSED") {
     order.statusTimestamps.closed = now;
   }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBadge } from './StatusBadge';
-import { PINATA_GATEWAY_URL, BLOCK_EXPLORER_URL } from '../config';
+import { API_URL, PINATA_GATEWAY_URL, BLOCK_EXPLORER_URL } from '../config';
 import { ShieldAlert, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
 
 export const ComplaintCard = ({
@@ -64,7 +64,12 @@ export const ComplaintCard = ({
               alt="Complaint Evidence"
               className="object-contain max-h-48 hover:scale-105 transition-all"
               onError={(e) => {
-                e.target.style.display = 'none';
+                if (!e.target.dataset.triedFallback) {
+                  e.target.dataset.triedFallback = 'true';
+                  e.target.src = `${API_URL}/api/complaints/evidence/${complaint.evidenceCID}`;
+                } else {
+                  e.target.style.display = 'none';
+                }
               }}
             />
           </div>

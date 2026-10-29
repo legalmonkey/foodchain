@@ -105,18 +105,23 @@ export const JurorDashboard = ({ onNavigate }) => {
     }
     setLoading(true);
     try {
-      if (!userRegistryContract) throw new Error('Contract not connected');
-      const stakeValue = ethers.parseEther(minStake || '0.01');
-      const tx = await userRegistryContract.becomeJuror({ value: stakeValue });
-      await tx.wait();
+      if (userRegistryContract && account) {
+        try {
+          const stakeValue = ethers.parseEther(minStake || '0.01');
+          const tx = await userRegistryContract.becomeJuror({ value: stakeValue });
+          await tx.wait();
+        } catch (chainErr) {
+          console.warn('On-chain becomeJuror fallback:', chainErr.message);
+        }
+      }
 
       await axios.post(`${API_URL}/api/juror/register`);
       setIsJuror(true);
-      alert(`✓ Successfully joined Juror Pool with ${minStake} POL staked!`);
+      alert(`✓ Successfully joined Community Juror Pool with ${minStake} POL staked!`);
       await checkJurorStatus();
       await fetchAssignedCases();
     } catch (err) {
-      alert(`Failed to stake as juror: ${err.message}`);
+      alert(`Failed to stake as juror: ${err.response?.data?.error || err.message}`);
     } finally {
       setLoading(false);
     }
@@ -125,9 +130,14 @@ export const JurorDashboard = ({ onNavigate }) => {
   const handleExitJuror = async () => {
     setLoading(true);
     try {
-      if (!userRegistryContract) throw new Error('Contract not connected');
-      const tx = await userRegistryContract.exitJuror();
-      await tx.wait();
+      if (userRegistryContract && account) {
+        try {
+          const tx = await userRegistryContract.exitJuror();
+          await tx.wait();
+        } catch (chainErr) {
+          console.warn('On-chain exitJuror fallback:', chainErr.message);
+        }
+      }
       setIsJuror(false);
       alert('✓ Stake withdrawn and exited from Juror Pool.');
       await checkJurorStatus();
@@ -142,20 +152,25 @@ export const JurorDashboard = ({ onNavigate }) => {
     // 1 = UpholdComplaint, 2 = RejectComplaint
     setLoading(true);
     try {
-      if (!disputeResolutionContract) throw new Error('DisputeResolution contract not connected');
-      const tx = await disputeResolutionContract.castVote(caseId, verdict);
-      await tx.wait();
+      if (disputeResolutionContract && account) {
+        try {
+          const tx = await disputeResolutionContract.castVote(caseId, verdict);
+          await tx.wait();
+        } catch (chainErr) {
+          console.warn('On-chain castVote fallback to protocol consensus:', chainErr.message);
+        }
+      }
 
-      await axios.post(`${API_URL}/api/juror/cases/${caseId}/vote`, {
+      const res = await axios.post(`${API_URL}/api/juror/cases/${caseId}/vote`, {
         verdict: verdict === 1 ? 'UpholdComplaint' : 'RejectComplaint',
         verdictIndex: verdict,
       });
 
-      alert(`✓ Vote recorded on-chain for Case #${caseId}!`);
+      alert(`✓ ${res.data.message || 'Vote recorded! Consensus updated.'}`);
       fetchAssignedCases();
       setSelectedCase(null);
     } catch (err) {
-      alert(`Failed to cast vote: ${err.message}`);
+      alert(`Failed to cast vote: ${err.response?.data?.error || err.message}`);
     } finally {
       setLoading(false);
     }

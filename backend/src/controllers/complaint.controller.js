@@ -3,7 +3,8 @@ const Order = require("../models/Order");
 const Restaurant = require("../models/Restaurant");
 const User = require("../models/User");
 const inMemoryDb = require("../services/inMemoryDb");
-const { uploadToIPFS } = require("../services/ipfs");
+const { uploadToIPFS, getEvidenceBuffer } = require("../services/ipfs");
+const { getIO } = require("../sockets/socketHandler");
 const config = require("../config/env");
 const mongoose = require("mongoose");
 
@@ -195,6 +196,119 @@ exports.getComplaintById = async (req, res) => {
       ...complaint,
       evidenceUrl: `${config.ipfs.gatewayUrl}/${complaint.evidenceCID}`,
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getEvidenceFile = (req, res) => {
+  try {
+    const { cid } = req.params;
+    const cached = getEvidenceBuffer(cid);
+    if (cached && cached.buffer) {
+      res.setHeader("Content-Type", cached.mimeType || "image/jpeg");
+      return res.send(cached.buffer);
+    }
+    return res.redirect(`${config.ipfs.gatewayUrl}/${cid}`);
+  } catch (err) {
+    res.status(404).json({ error: "Evidence file not found" });
+  }
+};
+
+exports.acceptFault = async (req, res) => {
+  try {
+    const id = req.params.id;
+    let complaint = null;
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        complaint = await ComplaintCache.findOne({
+          $or: [{ onChainComplaintId: Number(id) || -1 }, { _id: id }],
+        });
+      } catch (e) {}
+    }
+    if (!complaint) {
+      complaint = inMemoryDb.complaintCaches.find(
+        (c) => String(c.onChainComplaintId) === String(id) || String(c._id) === String(id)
+      );
+    }
+
+    if (!complaint) return res.status(404).json({ error: "Complaint not found" });
+
+    complaint.status = "AutoResolved";
+    complaint.verdictUpheld = true;
+    complaint.resolvedAt = new Date();
+
+    if (complaint.save) {
+      try { await complaint.save(); } catch (e) {}
+    }
+
+    // Auto-refund customer escrow!
+    const ordId = String(complaint.orderId?._id || complaint.orderId);
+    let order = inMemoryDb.orders.find((o) => String(o._id) === ordId);
+    if (order) {
+      order.escrow = {
+        ...(order.escrow || {}),
+        status: "REFUNDED",
+        refundedAt: new Date(),
+        notes: "Full refund issued to customer upon kitchen fault accepted",
+      };
+    }
+
+    const io = getIO();
+    if (io) {
+      io.emit("complaintUpdated", { complaintId: complaint.onChainComplaintId, status: "AutoResolved" });
+      if (order) io.emit("orderEscrowUpdated", { orderId: order._id, escrow: order.escrow, order });
+    }
+
+    res.json({ message: "Fault accepted. Customer escrow refunded in full.", complaint });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.contestComplaint = async (req, res) => {
+  try {
+    const id = req.params.id;
+    let complaint = null;
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        complaint = await ComplaintCache.findOne({
+          $or: [{ onChainComplaintId: Number(id) || -1 }, { _id: id }],
+        });
+      } catch (e) {}
+    }
+    if (!complaint) {
+      complaint = inMemoryDb.complaintCaches.find(
+        (c) => String(c.onChainComplaintId) === String(id) || String(c._id) === String(id)
+      );
+    }
+
+    if (!complaint) return res.status(404).json({ error: "Complaint not found" });
+
+    const caseId = complaint.caseId || complaint.onChainComplaintId || Math.floor(Date.now() % 100000);
+    complaint.status = "InDispute";
+    complaint.caseId = caseId;
+
+    if (complaint.save) {
+      try { await complaint.save(); } catch (e) {}
+    }
+
+    // Freeze escrow in dispute status
+    const ordId = String(complaint.orderId?._id || complaint.orderId);
+    let order = inMemoryDb.orders.find((o) => String(o._id) === ordId);
+    if (order && order.escrow) {
+      order.escrow.notes = `Funds held in escrow pending community jury dispute resolution #${caseId}`;
+    }
+
+    const io = getIO();
+    if (io) {
+      io.emit("complaintUpdated", { complaintId: complaint.onChainComplaintId, status: "InDispute", caseId });
+      io.emit("newAssignedCase", { caseId, complaintId: complaint.onChainComplaintId, complaint });
+    }
+
+    res.json({ message: `Dispute escalated to Community Jury (Case #${caseId})`, complaint, caseId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
