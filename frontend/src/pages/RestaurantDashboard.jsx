@@ -8,11 +8,12 @@ import { useSocket } from '../hooks/useSocket';
 import { OrderCard } from '../components/OrderCard';
 import { ComplaintCard } from '../components/ComplaintCard';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { getAmoyGasOverrides } from '../utils/gas';
 import { Award, Plus, ChefHat, AlertOctagon, CheckCircle2, X, Utensils, Scale, ClipboardList, Trash2, RefreshCw } from 'lucide-react';
 
 export const RestaurantDashboard = () => {
   const { user } = useAuth();
-  const { account, connectWallet } = useWeb3();
+  const { account, provider, connectWallet } = useWeb3();
   const complaintRegistryContract = useContract('ComplaintRegistry', true);
 
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'complaints' | 'menu'
@@ -190,7 +191,8 @@ export const RestaurantDashboard = () => {
     try {
       if (complaintRegistryContract && account) {
         try {
-          const tx = await complaintRegistryContract.respondentAccepts(onChainComplaintId);
+          const overrides = await getAmoyGasOverrides(provider);
+          const tx = await complaintRegistryContract.respondentAccepts(onChainComplaintId, overrides);
           await tx.wait();
         } catch (chainErr) {
           console.warn('On-chain fault acceptance fallback to protocol backend:', chainErr.message);
@@ -214,7 +216,8 @@ export const RestaurantDashboard = () => {
       let caseId = null;
       if (complaintRegistryContract && account) {
         try {
-          const tx = await complaintRegistryContract.respondentContests(onChainComplaintId);
+          const overrides = await getAmoyGasOverrides(provider);
+          const tx = await complaintRegistryContract.respondentContests(onChainComplaintId, overrides);
           const receipt = await tx.wait();
           caseId = Number(receipt.hash ? (Date.now() % 100000) : 1);
         } catch (chainErr) {

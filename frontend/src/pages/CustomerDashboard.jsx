@@ -9,6 +9,7 @@ import { OrderCard } from '../components/OrderCard';
 import { ComplaintCard } from '../components/ComplaintCard';
 import { EvidenceUploader } from '../components/EvidenceUploader';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { getAmoyGasOverrides } from '../utils/gas';
 import {
   Search,
   ShoppingBag,
@@ -26,7 +27,7 @@ import { KAGGLE_RESTAURANTS } from '../data/zomatoRestaurants';
 
 export const CustomerDashboard = () => {
   const { user } = useAuth();
-  const { signer, account, connectWallet } = useWeb3();
+  const { signer, account, provider, connectWallet } = useWeb3();
   const complaintRegistryContract = useContract('ComplaintRegistry', true);
 
   const menuListRef = useRef(null);
@@ -222,23 +223,28 @@ export const CustomerDashboard = () => {
       const { orderKey, respondentAddress, categoryIndex, evidenceCID } = prepRes.data;
 
       // Step 2: Prompt MetaMask wallet to sign on-chain transaction
-      setComplaintStatusMessage('2/3: Please sign Complaint transaction in MetaMask...');
+      setComplaintStatusMessage('2/3: Please sign Complaint transaction in MetaMask (Amoy gas configured)...');
       if (!complaintRegistryContract) {
         throw new Error('ComplaintRegistry contract not connected. Ensure MetaMask is on Polygon Amoy.');
       }
 
-      const tx = await complaintRegistryContract.fileComplaint(
-        orderKey,
-        respondentAddress,
-        categoryIndex,
-        evidenceCID
-      );
-      setComplaintStatusMessage('3/3: Waiting for on-chain block confirmation...');
-      const receipt = await tx.wait();
-
-      // Extract complaintId from events or fallback safely
+      const gasOverrides = await getAmoyGasOverrides(provider);
+      let tx = null;
+      let receipt = null;
       let onChainComplaintId = null;
+
       try {
+        tx = await complaintRegistryContract.fileComplaint(
+          orderKey,
+          respondentAddress,
+          categoryIndex,
+          evidenceCID,
+          gasOverrides
+        );
+        setComplaintStatusMessage('3/3: Waiting for on-chain block confirmation...');
+        receipt = await tx.wait();
+
+        // Extract complaintId from events or fallback safely
         if (receipt && receipt.logs && receipt.logs.length > 0) {
           for (const log of receipt.logs) {
             try {
@@ -250,7 +256,17 @@ export const CustomerDashboard = () => {
             } catch (e) {}
           }
         }
-      } catch (e) {}
+      } catch (onChainErr) {
+        console.warn('On-chain fileComplaint error or fallback:', onChainErr);
+        if (
+          onChainErr.code === 4001 ||
+          onChainErr.message?.toLowerCase().includes('user rejected') ||
+          onChainErr.message?.toLowerCase().includes('denied')
+        ) {
+          throw new Error('Transaction was cancelled in MetaMask.');
+        }
+        // If RPC gas or network error, fallback to sync with backend relayer
+      }
 
       if (!onChainComplaintId) {
         try {

@@ -81,6 +81,29 @@ function initBlockchain() {
   }
 }
 
+async function getRelayerGasOverrides() {
+  try {
+    const feeData = provider ? await provider.getFeeData() : null;
+    const minTip = ethers.parseUnits("35", "gwei");
+    const priorityFee =
+      feeData?.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > minTip
+        ? feeData.maxPriorityFeePerGas
+        : minTip;
+    let maxFee = feeData?.maxFeePerGas
+      ? (feeData.maxFeePerGas * 150n) / 100n
+      : ethers.parseUnits("55", "gwei");
+    if (maxFee < priorityFee + ethers.parseUnits("15", "gwei")) {
+      maxFee = priorityFee + ethers.parseUnits("20", "gwei");
+    }
+    return { maxPriorityFeePerGas: priorityFee, maxFeePerGas: maxFee };
+  } catch (e) {
+    return {
+      maxPriorityFeePerGas: ethers.parseUnits("35", "gwei"),
+      maxFeePerGas: ethers.parseUnits("55", "gwei"),
+    };
+  }
+}
+
 async function createOnChainOrder(mongoOrderId, customerAddress, restaurantAddress) {
   if (!contracts.OrderRegistry || !relayerWallet) {
     console.warn("OrderRegistry contract or relayer wallet not configured. Generating off-chain simulated key.");
@@ -88,10 +111,12 @@ async function createOnChainOrder(mongoOrderId, customerAddress, restaurantAddre
   }
 
   try {
+    const gasOverrides = await getRelayerGasOverrides();
     const tx = await contracts.OrderRegistry.createOrderRef(
       mongoOrderId,
       customerAddress,
-      restaurantAddress
+      restaurantAddress,
+      gasOverrides
     );
     const receipt = await tx.wait();
     const orderKey = ethers.keccak256(ethers.toUtf8Bytes(mongoOrderId));
@@ -105,7 +130,8 @@ async function createOnChainOrder(mongoOrderId, customerAddress, restaurantAddre
 async function assignOnChainDelivery(orderKey, deliveryAddress) {
   if (!contracts.OrderRegistry || !relayerWallet) return null;
   try {
-    const tx = await contracts.OrderRegistry.assignDeliveryPartner(orderKey, deliveryAddress);
+    const gasOverrides = await getRelayerGasOverrides();
+    const tx = await contracts.OrderRegistry.assignDeliveryPartner(orderKey, deliveryAddress, gasOverrides);
     return await tx.wait();
   } catch (error) {
     console.error("Error assigning on-chain delivery:", error.message);
@@ -115,7 +141,8 @@ async function assignOnChainDelivery(orderKey, deliveryAddress) {
 async function markOnChainDelivered(orderKey) {
   if (!contracts.OrderRegistry || !relayerWallet) return null;
   try {
-    const tx = await contracts.OrderRegistry.markDelivered(orderKey);
+    const gasOverrides = await getRelayerGasOverrides();
+    const tx = await contracts.OrderRegistry.markDelivered(orderKey, gasOverrides);
     return await tx.wait();
   } catch (error) {
     console.error("Error marking on-chain delivered:", error.message);

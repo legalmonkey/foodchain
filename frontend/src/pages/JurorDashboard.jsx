@@ -22,10 +22,11 @@ import {
   Wallet,
   AlertTriangle
 } from 'lucide-react';
+import { getAmoyGasOverrides } from '../utils/gas';
 
 export const JurorDashboard = ({ onNavigate }) => {
   const { user } = useAuth();
-  const { account, signer, connectWallet, connecting } = useWeb3();
+  const { account, signer, provider, connectWallet, connecting } = useWeb3();
 
   const userRegistryContract = useContract('UserRegistry', true);
   const disputeResolutionContract = useContract('DisputeResolution', true);
@@ -107,8 +108,9 @@ export const JurorDashboard = ({ onNavigate }) => {
     try {
       if (userRegistryContract && account) {
         try {
+          const overrides = await getAmoyGasOverrides(provider);
           const stakeValue = ethers.parseEther(minStake || '0.01');
-          const tx = await userRegistryContract.becomeJuror({ value: stakeValue });
+          const tx = await userRegistryContract.becomeJuror({ value: stakeValue, ...overrides });
           await tx.wait();
         } catch (chainErr) {
           console.warn('On-chain becomeJuror fallback:', chainErr.message);
@@ -132,7 +134,8 @@ export const JurorDashboard = ({ onNavigate }) => {
     try {
       if (userRegistryContract && account) {
         try {
-          const tx = await userRegistryContract.exitJuror();
+          const overrides = await getAmoyGasOverrides(provider);
+          const tx = await userRegistryContract.exitJuror(overrides);
           await tx.wait();
         } catch (chainErr) {
           console.warn('On-chain exitJuror fallback:', chainErr.message);
@@ -154,7 +157,8 @@ export const JurorDashboard = ({ onNavigate }) => {
     try {
       if (disputeResolutionContract && account) {
         try {
-          const tx = await disputeResolutionContract.castVote(caseId, verdict);
+          const overrides = await getAmoyGasOverrides(provider);
+          const tx = await disputeResolutionContract.castVote(caseId, verdict, overrides);
           await tx.wait();
         } catch (chainErr) {
           console.warn('On-chain castVote fallback to protocol consensus:', chainErr.message);
@@ -180,7 +184,8 @@ export const JurorDashboard = ({ onNavigate }) => {
     setLoading(true);
     try {
       if (!disputeResolutionContract) throw new Error('Contract not connected');
-      const tx = await disputeResolutionContract.finalizeCase(caseId);
+      const overrides = await getAmoyGasOverrides(provider);
+      const tx = await disputeResolutionContract.finalizeCase(caseId, overrides);
       await tx.wait();
       alert(`✓ Case #${caseId} finalized! Majority consensus rewarded; minority slashed.`);
       fetchAssignedCases();
